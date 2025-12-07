@@ -3,14 +3,14 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface PlayerState {
   isTheaterMode: boolean;
-  currentEpisodeIndex: number; // Index in the episode list
-  watchList: number[]; // Anime IDs
+  currentEpisodeId: string | null; // Changed from Index to ID
+  watchList: string[]; // Changed from number[] to string[]
   autoPlay: boolean;
 }
 
 const initialState: PlayerState = {
   isTheaterMode: false,
-  currentEpisodeIndex: 0,
+  currentEpisodeId: null,
   watchList: [],
   autoPlay: true,
 };
@@ -25,15 +25,15 @@ export const playerSlice = createSlice({
     toggleAutoPlay: (state) => {
       state.autoPlay = !state.autoPlay;
     },
-    setEpisode: (state, action: PayloadAction<number>) => {
-      state.currentEpisodeIndex = action.payload;
+    setCurrentEpisodeId: (state, action: PayloadAction<string>) => {
+      state.currentEpisodeId = action.payload;
     },
-    addToWatchList: (state, action: PayloadAction<number>) => {
+    addToWatchList: (state, action: PayloadAction<string>) => {
       if (!state.watchList.includes(action.payload)) {
         state.watchList.push(action.payload);
       }
     },
-    removeFromWatchList: (state, action: PayloadAction<number>) => {
+    removeFromWatchList: (state, action: PayloadAction<string>) => {
       state.watchList = state.watchList.filter((id) => id !== action.payload);
     },
   },
@@ -42,7 +42,7 @@ export const playerSlice = createSlice({
 export const {
   toggleTheaterMode,
   toggleAutoPlay,
-  setEpisode,
+  setCurrentEpisodeId,
   addToWatchList,
   removeFromWatchList,
 } = playerSlice.actions;
