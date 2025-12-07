@@ -1,26 +1,66 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
+@theme {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --radius: 0.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Dracula Theme Colors Mapped */
+    --background: #282a36;
+    --foreground: #f8f8f2;
+
+    --card: #282a36;
+    --card-foreground: #f8f8f2;
+
+    --popover: #44475a;
+    --popover-foreground: #f8f8f2;
+
+    --primary: #bd93f9; /* Dracula Purple */
+    --primary-foreground: #282a36;
+
+    --secondary: #ff79c6; /* Dracula Pink */
+    --secondary-foreground: #282a36;
+
+    --muted: #44475a;
+    --muted-foreground: #6272a4; /* Dracula Comment */
+
+    --accent: #50fa7b; /* Dracula Green */
+    --accent-foreground: #282a36;
+
+    --destructive: #ff5555; /* Dracula Red */
+    --destructive-foreground: #f8f8f2;
+
+    --border: #6272a4;
+    --input: #44475a;
+    --ring: #bd93f9;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
 }
