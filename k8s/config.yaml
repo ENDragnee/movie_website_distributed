@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  # Public Domain (Browser Access)
+  BETTER_AUTH_URL: "http://auth.dracula.com"
+  # Internal Cluster URLs (Container-to-Container)
+  AUTH_SERVICE_INTERNAL: "http://auth-service:3000"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+type: Opaque

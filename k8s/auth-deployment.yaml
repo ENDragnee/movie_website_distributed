@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      # --- DATABASE INITIALIZATION ---
+      # initContainers:
+      #   - name: init-db
+      #     image: myuser/auth-service:latest
+      #     imagePullPolicy: Never
+      #     # UPDATED COMMAND: Explicitly point to prisma.config.ts
+      #     command:
+      #       [
+      #         "/bin/sh",
+      #         "-c",
+      #         "npx prisma db push --accept-data-loss --config prisma.config.ts",
+      #       ]
+      #     securityContext:
+      #       runAsUser: 0 # Run as root to allow writing temp files during migration
+      #     env:
+      #       - name: DATABASE_URL
+      #         valueFrom:
+      #           secretKeyRef:
+      #             name: app-secrets
+      #             key: DATABASE_URL
+      # -------------------------------
+
+      containers:
+        - name: auth-service
+          image: myuser/auth-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3000
+          env:
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATABASE_URL
+            - name: BETTER_AUTH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: BETTER_AUTH_SECRET
+            - name: BETTER_AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: BETTER_AUTH_URL
+            # Trust both the auth subdomain and the main domain
+            - name: BETTER_AUTH_TRUSTED_ORIGINS
+              value: "http://auth.dracula.com,http://dracula.com"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000

@@ -1,26 +1,157 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+/* 1. Define CSS Variables for Light (Default) and Dark Modes */
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* --- LIGHT THEME (Soft Zinc / Professional) --- */
+    --background: #fafafa; /* Zinc 50 - Softer than pure white */
+    --foreground: #09090b; /* Zinc 950 */
+
+    --card: #ffffff;
+    --card-foreground: #09090b;
+
+    --popover: #ffffff;
+    --popover-foreground: #09090b;
+
+    /* Keep the brand purple, but ensure text on top is dark */
+    --primary: #bd93f9;
+    --primary-foreground: #09090b;
+
+    --secondary: #f4f4f5; /* Zinc 100 */
+    --secondary-foreground: #18181b;
+
+    --muted: #f4f4f5;
+    --muted-foreground: #71717a; /* Zinc 500 */
+
+    --accent: #f4f4f5;
+    --accent-foreground: #18181b;
+
+    --destructive: #ef4444; /* Red 500 */
+    --destructive-foreground: #fafafa;
+
+    --border: #e4e4e7; /* Zinc 200 */
+    --input: #e4e4e7;
+    --ring: #bd93f9;
+
+    --radius: 0.75rem;
+
+    /* Light Scrollbar Colors */
+    --scrollbar-thumb: #a1a1aa;
+    --scrollbar-track: transparent;
+  }
+
+  .dark {
+    /* --- DARK THEME (Dracula / Deep Zinc) --- */
+    --background: #09090b;
+    --foreground: #fafafa;
+
+    --card: #121214;
+    --card-foreground: #fafafa;
+
+    --popover: #09090b;
+    --popover-foreground: #fafafa;
+
+    --primary: #bd93f9;
+    --primary-foreground: #09090b;
+
+    --secondary: #27272a;
+    --secondary-foreground: #fafafa;
+
+    --muted: #27272a;
+    --muted-foreground: #a1a1aa;
+
+    --accent: #27272a;
+    --accent-foreground: #fafafa;
+
+    --destructive: #ff5555;
+    --destructive-foreground: #fafafa;
+
+    --border: rgba(255, 255, 255, 0.1);
+    --input: rgba(255, 255, 255, 0.1);
+    --ring: #bd93f9;
+
+    /* Dark Scrollbar Colors */
+    --scrollbar-thumb: rgba(255, 255, 255, 0.1);
+    --scrollbar-track: transparent;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* 2. Map Tailwind Utilities to Variables */
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius: var(--radius);
+
+  /* Animation Definitions */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+/* 3. Global Styles */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary transition-colors duration-300;
+  }
+
+  /* Adaptive Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-primary/50;
+  }
 }

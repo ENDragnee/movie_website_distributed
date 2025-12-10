@@ -1,24 +1,38 @@
-name: movie_postgres
+name: distributed_movie_auth
 
 services:
   postgres:
     image: postgres:17.6
-    container_name: movie_postgres
+    container_name: ds_movie_auth_pg
     restart: unless-stopped
     environment:
-      POSTGRES_USER: movie_admin  
+      POSTGRES_USER: admin
       POSTGRES_PASSWORD: qazwsxedc
-      POSTGRES_DB: movie_database
+      POSTGRES_DB: ds_movie_auth
     ports:
       - "5432:5432"
     volumes:
-      - movie_postgres:/var/lib/postgresql/data
+      - ds_movie_auth_postgres:/var/lib/postgresql/data
     networks:
-      - movie_network
-
-networks:
-  movie_network:
-    driver: bridge
+      - ds_movie_network
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vdi_system_admin_app
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "3000:3000"
+    networks:
+      - vdi_network
+    depends_on:
+      - postgres
 
 volumes:
-  movie_postgres:
+  ds_movie_auth_postgres:
+
+networks:
+  ds_movie_network:
+    driver: bridge

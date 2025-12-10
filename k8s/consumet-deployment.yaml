@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: consumet-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: consumet-api
+  template:
+    metadata:
+      labels:
+        app: consumet-api
+    spec:
+      containers:
+        - name: consumet-api
+          image: myuser/consumet-api:latest
+          imagePullPolicy: Never # 'Never' for local Minikube, 'Always' for Docker Hub
+          ports:
+            - containerPort: 8000
+          env:
+            - name: PORT
+              value: "8000"
+            # --- REDIS CONFIGURATION ---
+            - name: REDIS_HOST
+              value: "redis-service" # Must match the Service name in k8s/redis.yaml
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              value: "" # Default alpine redis has no password
+          # Optional: Add resource limits to prevent memory leaks from crashing the node
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: consumet-api
+spec:
+  selector:
+    app: consumet-api
+  ports:
+    - protocol: TCP
+      port: 3000 # Cluster internal port (Ingress talks to this)
+      targetPort: 8000 # Container port (Consumet listens here)

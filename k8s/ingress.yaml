@@ -1,0 +1,56 @@
+# 1. AUTH SERVICE (auth.dracula.com)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: auth-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # Allow headers for auth
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://dracula.com"
+spec:
+  rules:
+    - host: auth.dracula.com # <--- NEW SUBDOMAIN
+      http:
+        paths:
+          # Send EVERYTHING on this subdomain to Auth Service
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: auth-service
+                port:
+                  number: 3000
+
+---
+# 2. MAIN PAGE & CONSUMET (dracula.com)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: main-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  rules:
+    - host: dracula.com
+      http:
+        paths:
+          # Consumet API
+          - path: /anime(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: consumet-api
+                port:
+                  number: 3000
+
+          # Main Page (Catch-all)
+          - path: /()(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: main-page
+                port:
+                  number: 3000

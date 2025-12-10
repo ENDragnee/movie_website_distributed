@@ -1,0 +1,23 @@
+name: distributed_movie_app
+
+services:
+  postgres:
+    image: postgres:17.6
+    container_name: ascii_portfolio
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: qazwsxedc
+      POSTGRES_DB: ds_movie
+    ports:
+      - "5432:5432"
+    volumes:
+      - ds_movie_postgres:/var/lib/postgresql/data
+    networks:
+      - ds_movie_network
+volumes:
+  ds_movie_postgres:
+
+networks:
+  ds_movie_network:
+    driver: bridge

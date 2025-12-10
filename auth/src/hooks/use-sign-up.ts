@@ -23,7 +23,7 @@ export function useSignUp() {
 
   const handleEmailSignUp = async (values: SignUpValues) => {
     setGlobalError("");
-    
+
     try {
       const { error } = await authClient.signUp.email({
         email: values.email,
@@ -42,12 +42,11 @@ export function useSignUp() {
 
       // Show success UI
       setIsSuccess(true);
-      
+
       // Redirect after 3 seconds
       setTimeout(() => {
-        router.push("/sign-in");
+        router.push("http://auth.dracula.com/sign-in");
       }, 3000);
-
     } catch (err) {
       setGlobalError("An unexpected error occurred. Please try again.");
     }
@@ -56,13 +55,13 @@ export function useSignUp() {
   const handleGoogleSignUp = async () => {
     setIsGoogleLoading(true);
     setGlobalError("");
-    
+
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/dashboard",
+        callbackURL: "http://dracula.com",
       });
-      
+
       if (error) {
         setGlobalError("Google sign-up failed.");
         setIsGoogleLoading(false);
@@ -82,3 +81,4 @@ export function useSignUp() {
     handleGoogleSignUp,
   };
 }
+
