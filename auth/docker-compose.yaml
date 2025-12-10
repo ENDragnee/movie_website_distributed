@@ -15,6 +15,21 @@ services:
       - ds_movie_auth_postgres:/var/lib/postgresql/data
     networks:
       - ds_movie_network
+  auth-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: vdi_system_admin_app
+    restart: unless-stopped
+    env_file:
+      - .env.local
+    ports:
+      - "3000:3000"
+    networks:
+      - vdi_network
+    depends_on:
+      - postgres
+
 volumes:
   ds_movie_auth_postgres:
 

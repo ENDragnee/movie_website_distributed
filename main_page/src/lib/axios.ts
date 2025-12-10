@@ -1,8 +1,21 @@
 import axios from "axios";
 
-// We switch to 'meta/anilist' which is much more stable than direct 'anime/gogoanime'
+// 1. Determine the Base URL based on environment
+const getBaseUrl = () => {
+  if (typeof window === "undefined") {
+    // SERVER-SIDE: Talk directly to the K8s Service (Internal DNS)
+    // Format: http://<service-name>:<port>
+    return "http://consumet-api:8000";
+  } else {
+    // CLIENT-SIDE: Talk to the Ingress (Reverse Proxy)
+    // The ingress rewrites '/anime' -> '/'
+    return "/anime";
+  }
+};
+
 export const api = axios.create({
-  baseURL: "http://localhost:8000/meta/anilist",
+  // Append the specific route you are targeting
+  baseURL: `${getBaseUrl()}/meta/anilist`,
   headers: {
     "Content-Type": "application/json",
   },

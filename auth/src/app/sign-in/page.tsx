@@ -7,73 +7,100 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2 } from "lucide-react";
+import { Loader2, Ghost } from "lucide-react";
 
 export default function SignInPage() {
-  const { 
-    form, 
-    globalError, 
-    isGoogleLoading, 
-    handleEmailSignIn, 
-    handleGoogleSignIn 
+  const {
+    form,
+    globalError,
+    isGoogleLoading,
+    handleEmailSignIn,
+    handleGoogleSignIn
   } = useSignIn();
 
-  const { 
-    register, 
-    formState: { errors, isSubmitting } 
+  const {
+    register,
+    formState: { errors, isSubmitting }
   } = form;
 
   // Combine loading states to disable UI
   const isLoading = isSubmitting || isGoogleLoading;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
-          <CardDescription>
-            Welcome back! Sign in to access your account.
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+
+      {/* Background Decor (Matching Home Page Aesthetic) */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
+        <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px]" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px]" />
+      </div>
+
+      <Card className="w-full max-w-md relative z-10 border-border bg-card/50 backdrop-blur-xl shadow-2xl">
+        <CardHeader className="space-y-1 text-center flex flex-col items-center">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
+            <Ghost className="w-6 h-6" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+            Welcome back
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Sign in to continue your anime journey
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          
+
           {/* Global Error Alert */}
           {globalError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
               <AlertDescription>{globalError}</AlertDescription>
             </Alert>
           )}
 
           <form onSubmit={handleEmailSignIn} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 disabled={isLoading}
-                {...register("email")} // Binds input to React Hook Form
+                className="bg-background/50 border-input focus:ring-primary/50"
+                {...register("email")}
               />
               {errors.email && (
-                <p className="text-sm text-red-500 font-medium">{errors.email.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.email.message}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-foreground">Password</Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 disabled={isLoading}
+                className="bg-background/50 border-input focus:ring-primary/50"
                 {...register("password")}
               />
               {errors.password && (
-                <p className="text-sm text-red-500 font-medium">{errors.password.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.password.message}</p>
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-[0_0_20px_-5px_var(--color-primary)]"
+              disabled={isLoading}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -86,12 +113,12 @@ export default function SignInPage() {
           </form>
 
           {/* Divider */}
-          <div className="relative">
+          <div className="relative my-2">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-card px-2 text-muted-foreground">
                 Or continue with
               </span>
             </div>
@@ -100,12 +127,12 @@ export default function SignInPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full border-input hover:bg-accent hover:text-accent-foreground transition-all"
             onClick={handleGoogleSignIn}
             disabled={isLoading}
           >
             {isGoogleLoading ? (
-               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -126,13 +153,13 @@ export default function SignInPage() {
                 />
               </svg>
             )}
-            {isGoogleLoading ? "Connecting..." : "Sign in with Google"}
+            {isGoogleLoading ? "Connecting..." : "Google"}
           </Button>
         </CardContent>
         <CardFooter>
           <p className="text-sm text-muted-foreground text-center w-full">
-            Don't have an account?{" "}
-            <Link href="/sign-up" className="text-primary hover:underline font-medium">
+            Don&apos;t have an account?{" "}
+            <Link href="/sign-up" className="text-primary hover:text-primary/80 hover:underline font-medium transition-colors">
               Sign up
             </Link>
           </p>

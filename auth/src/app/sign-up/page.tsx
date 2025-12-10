@@ -7,48 +7,59 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Loader2, CheckCircle2 } from "lucide-react";
+import { Loader2, CheckCircle2, Ghost } from "lucide-react";
 
 export default function SignUpPage() {
-  const { 
-    form, 
-    globalError, 
-    isGoogleLoading, 
+  const {
+    form,
+    globalError,
+    isGoogleLoading,
     isSuccess,
-    handleEmailSignUp, 
-    handleGoogleSignUp 
+    handleEmailSignUp,
+    handleGoogleSignUp
   } = useSignUp();
 
-  const { 
-    register, 
+  const {
+    register,
     watch,
-    formState: { errors, isSubmitting } 
+    formState: { errors, isSubmitting }
   } = form;
 
   // Combine loading states
   const isLoading = isSubmitting || isGoogleLoading;
 
+  // --- Background Component (Shared) ---
+  const BackgroundDecor = () => (
+    <div className="absolute inset-0 z-0 pointer-events-none">
+      <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
+      <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px]" />
+      <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary/5 blur-[120px]" />
+    </div>
+  );
+
   // 1. Render Success View
   if (isSuccess) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <div className="flex justify-center mb-4">
-              <CheckCircle2 className="h-16 w-16 text-green-500" />
+      <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+        <BackgroundDecor />
+        <Card className="w-full max-w-md relative z-10 border-border bg-card/50 backdrop-blur-xl shadow-2xl animate-in fade-in zoom-in-95 duration-500">
+          <CardHeader className="text-center">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-500/10">
+              <CheckCircle2 className="h-10 w-10 text-green-500" />
             </div>
-            <CardTitle className="text-2xl font-bold text-center">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Registration Successful!
             </CardTitle>
-            <CardDescription className="text-center">
-              We've sent a verification email to <strong>{watch("email")}</strong>.
+            <CardDescription className="text-muted-foreground mt-2">
+              We&apos;ve sent a verification email to <strong className="text-foreground">{watch("email")}</strong>.
+              <br />
               Please check your inbox and verify your email before signing in.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground text-center">
-              Redirecting to sign in page...
-            </p>
+            <Button asChild className="w-full bg-primary text-primary-foreground hover:bg-primary/90">
+              <Link href="/sign-in">Go to Sign In</Link>
+            </Button>
           </CardContent>
         </Card>
       </div>
@@ -57,18 +68,25 @@ export default function SignUpPage() {
 
   // 2. Render Form View
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Create Account</CardTitle>
-          <CardDescription>
-            Sign up to start streaming your favorite movies.
+    <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
+      <BackgroundDecor />
+
+      <Card className="w-full max-w-md relative z-10 border-border bg-card/50 backdrop-blur-xl shadow-2xl">
+        <CardHeader className="space-y-1 text-center flex flex-col items-center">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 text-primary">
+            <Ghost className="w-6 h-6" />
+          </div>
+          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+            Create Account
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">
+            Join DraculaStream to track your anime journey
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          
+
           {globalError && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" className="bg-destructive/10 border-destructive/20 text-destructive">
               <AlertDescription>{globalError}</AlertDescription>
             </Alert>
           )}
@@ -76,64 +94,72 @@ export default function SignUpPage() {
           <form onSubmit={handleEmailSignUp} className="space-y-4">
             {/* Name Input */}
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name" className="text-foreground">Full Name</Label>
               <Input
                 id="name"
-                placeholder="John Doe"
+                placeholder="Alucard Tepes"
                 disabled={isLoading}
+                className="bg-background/50 border-input focus:ring-primary/50"
                 {...register("name")}
               />
               {errors.name && (
-                <p className="text-sm text-red-500 font-medium">{errors.name.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.name.message}</p>
               )}
             </div>
 
             {/* Email Input */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-foreground">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="count@dracula.com"
                 disabled={isLoading}
+                className="bg-background/50 border-input focus:ring-primary/50"
                 {...register("email")}
               />
               {errors.email && (
-                <p className="text-sm text-red-500 font-medium">{errors.email.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.email.message}</p>
               )}
             </div>
 
             {/* Password Input */}
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-foreground">Password</Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 disabled={isLoading}
+                className="bg-background/50 border-input focus:ring-primary/50"
                 {...register("password")}
               />
               {errors.password && (
-                <p className="text-sm text-red-500 font-medium">{errors.password.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.password.message}</p>
               )}
             </div>
 
             {/* Confirm Password Input */}
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
+              <Label htmlFor="confirmPassword" className="text-foreground">Confirm Password</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 placeholder="••••••••"
                 disabled={isLoading}
+                className="bg-background/50 border-input focus:ring-primary/50"
                 {...register("confirmPassword")}
               />
               {errors.confirmPassword && (
-                <p className="text-sm text-red-500 font-medium">{errors.confirmPassword.message}</p>
+                <p className="text-sm text-destructive font-medium">{errors.confirmPassword.message}</p>
               )}
             </div>
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-[0_0_20px_-5px_var(--color-primary)]"
+              disabled={isLoading}
+            >
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -145,12 +171,12 @@ export default function SignUpPage() {
             </Button>
           </form>
 
-          <div className="relative">
+          <div className="relative my-2">
             <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
+              <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
+              <span className="bg-card px-2 text-muted-foreground">
                 Or continue with
               </span>
             </div>
@@ -159,12 +185,12 @@ export default function SignUpPage() {
           <Button
             type="button"
             variant="outline"
-            className="w-full"
+            className="w-full border-input hover:bg-accent hover:text-accent-foreground transition-all"
             onClick={handleGoogleSignUp}
             disabled={isLoading}
           >
             {isGoogleLoading ? (
-               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             ) : (
               <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                 <path
@@ -191,7 +217,7 @@ export default function SignUpPage() {
         <CardFooter>
           <p className="text-sm text-muted-foreground text-center w-full">
             Already have an account?{" "}
-            <Link href="/sign-in" className="text-primary hover:underline font-medium">
+            <Link href="/sign-in" className="text-primary hover:text-primary/80 hover:underline font-medium transition-colors">
               Sign in
             </Link>
           </p>

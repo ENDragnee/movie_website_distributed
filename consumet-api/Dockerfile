@@ -1,58 +1,59 @@
-FROM node:20 as builder
+# --- Stage 1: Builder ---
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Install build tools needed for some Node modules (gyp, python, etc)
+RUN apk add --no-cache python3 make g++
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies (including devDependencies for building)
+RUN npm install
+
+# Copy source code
+COPY . .
+
+# Build the project (if the Consumet version uses TypeScript)
+# This flag ensures it doesn't fail if no build script exists
+RUN npm run build --if-present
+
+# --- Stage 2: Runner (Production) ---
+FROM node:20-alpine AS runner
 
 LABEL version="1.0.0"
-LABEL description="Consumet API (fastify) Docker Image"
+LABEL description="Consumet API (Distributed System)"
 
-# update packages, to reduce risk of vulnerabilities
-RUN apt-get update && apt-get upgrade -y && apt-get autoclean -y && apt-get autoremove -y
+WORKDIR /app
 
-# set a non privileged user to use when running this image
-RUN groupadd -r nodejs && useradd -g nodejs -s /bin/bash -d /home/nodejs -m nodejs
-USER nodejs
-# set right (secure) folder permissions
-RUN mkdir -p /home/nodejs/app/node_modules && chown -R nodejs:nodejs /home/nodejs/app
-
-WORKDIR /home/nodejs/app
-
-# set default node env
-ARG NODE_ENV=PROD
-ARG PORT=8000
-
-# ARG NODE_ENV=production
-# to be able to run tests (for example in CI), do not set production as environment
-ENV NODE_ENV=${NODE_ENV}
-ENV PORT=${PORT}
+# Set Environment Variables
+ENV NODE_ENV=production
+ENV PORT=8000
+# Redis variables will be injected by Kubernetes
 ENV REDIS_HOST=${REDIS_HOST}
 ENV REDIS_PORT=${REDIS_PORT}
 ENV REDIS_PASSWORD=${REDIS_PASSWORD}
 
-ENV NPM_CONFIG_LOGLEVEL=warn
+# Create non-root user for security
+RUN addgroup -g 1001 nodejs && \
+  adduser -S -u 1001 -G nodejs nodejs
 
-# copy project definition/dependencies files, for better reuse of layers
-COPY --chown=nodejs:nodejs package*.json ./
+# Copy dependencies and built files from builder
+COPY --from=builder --chown=nodejs:nodejs /app/package*.json ./
+COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+# Copy the rest of the app (src/dist)
+COPY --from=builder --chown=nodejs:nodejs /app ./
 
-# install dependencies here, for better reuse of layers
-RUN npm install && npm update && npm cache clean --force
+# Switch to non-root user
+USER nodejs
 
-# copy all sources in the container (exclusions in .dockerignore file)
-COPY --chown=nodejs:nodejs . .
-
-# build/pack binaries from sources
-
-# This results in a single layer image
-# FROM node:lts-alpine AS release
-# COPY --from=builder /dist /dist
-
-# exposed port/s
+# Expose the specific Consumet port
 EXPOSE 8000
 
-# add an healthcheck, useful
-# healthcheck with curl, but not recommended
-# HEALTHCHECK CMD curl --fail http://localhost:3000/health || exit 1
-# healthcheck by calling the additional script exposed by the plugin
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s CMD npm run healthcheck-manual
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s \
+  CMD npm run healthcheck-manual || exit 1
 
-# ENTRYPOINT [ "node" ]
-CMD [ "npm", "start" ]
-
-# end.
+# Start
+CMD ["npm", "start"]

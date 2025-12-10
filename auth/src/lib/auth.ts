@@ -4,9 +4,24 @@ import { nextCookies } from "better-auth/next-js";
 import { prisma } from "@/lib/prisma";
 
 export const auth = betterAuth({
+  baseURL: process.env.BETTER_AUTH_URL, // "http://auth.dracula.com"
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
+
+  trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS
+    ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
+    : ["http://dracula.com"],
+
+  // --- CRITICAL FIX FOR SUBDOMAINS ---
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: "dracula.com",
+    },
+    defaultRedirectURL: "http://dracula.com",
+  },
+  // ----------------------------------
 
   user: {
     additionalFields: {
