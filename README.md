@@ -1,5 +1,3 @@
----
-
 # 🧛 DraculaStream
 
 **DraculaStream** is a modern, distributed anime streaming platform built using a Microservices architecture. It runs on Kubernetes and features a sleek "Dracula" themed UI, HLS video streaming, and cross-domain authentication.
