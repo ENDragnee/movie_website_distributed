@@ -137,6 +137,8 @@
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/30 selection:text-primary transition-colors duration-300;
+    /* Use a reliable system font stack instead of fetching from Google during build */
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
   }
 
   /* Adaptive Scrollbar */

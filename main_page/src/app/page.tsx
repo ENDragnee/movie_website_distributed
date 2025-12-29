@@ -132,7 +132,7 @@ export default function Home() {
               )}
               onLoad={() => setHeroImageLoaded(true)}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-black/20" />
+            <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-black/20" />
             <div className="absolute inset-0 bg-gradient-to-r from-background via-background/20 to-transparent" />
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04] mix-blend-overlay"></div>
           </div>
