@@ -1,12 +1,16 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-// Define the shape based on BetterAuth response
+// Define the shape based on app User model (keeps optional fields for flexibility)
 interface User {
   id: string;
   name: string;
   email: string;
   image?: string;
   role?: string;
+  avatar?: string;
+  favoriteGenres?: string[];
+  watchlistCount?: number;
+  watchedCount?: number;
 }
 
 interface AuthState {

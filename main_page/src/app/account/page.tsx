@@ -1,11 +1,12 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useEffect, useState } from "react"
 import { useTheme } from "next-themes"
 import { z } from "zod"
 import { passwordSchema } from "@/lib/schemas/password-schema"
-import { MOCK_USER } from "@/lib/mock-data/user"
+import { useSelector, useDispatch } from "react-redux"
+import type { RootState } from "@/store/store"
+import { setSession } from "@/store/slices/auth-slice"
 import { AccountHeader } from "@/components/account/account-header"
 import { NotificationToast } from "@/components/account/notification-toast"
 import { ProfileForm } from "@/components/account/profile-form"
@@ -26,14 +27,25 @@ export default function AccountPage() {
   })
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({})
 
+  const { user } = useSelector((state: RootState) => state.auth)
+  const dispatch = useDispatch()
+
   const [formData, setFormData] = useState({
-    name: MOCK_USER.name,
-    email: MOCK_USER.email,
-    favoriteGenres: MOCK_USER.favoriteGenres,
+    name: user?.name ?? "",
+    email: user?.email ?? "",
+    favoriteGenres: user?.favoriteGenres ?? [],
   })
 
-  const [avatar, setAvatar] = useState(MOCK_USER.avatar)
+  const [avatar, setAvatar] = useState(user?.avatar ?? "")
   const [uploadPreview, setUploadPreview] = useState<string | null>(null)
+
+  // Keep local form state in sync if the store user changes (session sync)
+  useEffect(() => {
+    if (user) {
+      setFormData({ name: user.name, email: user.email, favoriteGenres: user.favoriteGenres ?? [] })
+      setAvatar(user.avatar ?? "")
+    }
+  }, [user])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
@@ -82,6 +94,18 @@ export default function AccountPage() {
         setUploadPreview(null)
       }
 
+      // Persist name/email/avatar/favoriteGenres back to the Redux store
+      const updatedUser = {
+        ...(user ?? { id: "", name: "", email: "" }),
+        name: formData.name,
+        email: formData.email,
+        avatar: uploadPreview ? uploadPreview : avatar,
+        favoriteGenres: formData.favoriteGenres,
+        watchlistCount: user?.watchlistCount ?? 0,
+        watchedCount: user?.watchedCount ?? 0,
+      }
+      dispatch(setSession(updatedUser))
+
       setIsEditing(false)
       setNotification({ type: "success", message: "Account updated successfully!" })
       setTimeout(() => setNotification(null), 3000)
@@ -93,11 +117,7 @@ export default function AccountPage() {
   }
 
   const handleCancel = () => {
-    setFormData({
-      name: MOCK_USER.name,
-      email: MOCK_USER.email,
-      favoriteGenres: MOCK_USER.favoriteGenres,
-    })
+    setFormData({ name: user?.name ?? "", email: user?.email ?? "", favoriteGenres: user?.favoriteGenres ?? [] })
     setUploadPreview(null)
     setIsEditing(false)
   }
@@ -186,7 +206,17 @@ export default function AccountPage() {
 
           {/* Sidebar */}
           <div className="space-y-6">
-            <ActivityStats user={MOCK_USER} />
+            <ActivityStats
+              user={{
+                id: user?.id ?? "",
+                name: user?.name ?? "",
+                email: user?.email ?? "",
+                avatar: user?.avatar ?? avatar,
+                favoriteGenres: user?.favoriteGenres ?? formData.favoriteGenres,
+                watchlistCount: user?.watchlistCount ?? 0,
+                watchedCount: user?.watchedCount ?? 0,
+              }}
+            />
           </div>
         </div>
       </div>
