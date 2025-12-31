@@ -5,16 +5,16 @@ export interface Session {
   user: {
     id: string;
     email: string;
-    emailVerified: boolean;
+    emailVerified?: boolean;
     name: string;
     image?: string;
-    createdAt: Date;
-    updatedAt: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
     role: string; // Your custom field
   };
   session: {
     id: string;
-    userId: string;
+    userId?: string;
     expiresAt: Date;
     ipAddress?: string;
     userAgent?: string;
@@ -22,6 +22,21 @@ export interface Session {
 }
 
 export async function getSession(): Promise<Session | null> {
+  if (process.env.NODE_ENV === 'development') {
+    return {
+      user: {
+        id: "HUxrqJA0kK9w4cOFwOdzR66k4KFj6mKO", // Use an ID that matches your Django DB for testing
+        name: "Ma",
+        email: "ma@mail.com",
+        role: "User",
+        image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+      },
+      session: {
+        id: "ACBoYX3EbRBz4d1X1j9XWEQCUHNHUadb",
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+      }
+    };
+  }
   const headersList = await headers();
   const cookie = headersList.get("cookie");
 

@@ -26,7 +26,7 @@ export function useSignIn() {
       const { error } = await authClient.signIn.email({
         email: values.email,
         password: values.password,
-        callbackURL: "http://dracula.com",
+        callbackURL: "http://localhost:3000",
       });
 
       if (error) {
@@ -38,7 +38,7 @@ export function useSignIn() {
         return;
       }
 
-      router.push("http://dracula.com");
+      router.push("http://localhost:3000");
     } catch (err) {
       setGlobalError("An unexpected error occurred. Please try again.");
     }
@@ -51,7 +51,7 @@ export function useSignIn() {
     try {
       const { error } = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "http://dracula.com",
+        callbackURL: "http://localhost:3000",
       });
 
       if (error) {

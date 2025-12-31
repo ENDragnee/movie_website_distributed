@@ -1,0 +1,25 @@
+# serializers.py
+from rest_framework import serializers
+from .models import Account, User
+
+class UserUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["name", "email", "image"]
+
+    def validate_email(self, value):
+        user_id = self.instance.id
+        if User.objects.exclude(id=user_id).filter(email=value).exists():
+            raise serializers.ValidationError("Email already in use")
+        return value
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(required=True)
+    new_password = serializers.CharField(required=True)
+    confirm_password = serializers.CharField(required=True)
+
+    def validate(self, data):
+        if data['new_password'] != data['confirm_password']:
+            raise serializers.ValidationError({"confirm_password": "New passwords do not match."})
+        return data
