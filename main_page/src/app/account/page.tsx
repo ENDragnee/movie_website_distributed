@@ -13,6 +13,7 @@ import { ProfileForm } from "@/components/account/profile-form"
 import { PasswordForm } from "@/components/account/password-form"
 import { GenresSection } from "@/components/account/genres-section"
 import { ActivityStats } from "@/components/account/activity-stats"
+import { authClient } from "@/lib/auth-client"
 
 export default function AccountPage() {
   const { theme } = useTheme()
@@ -137,17 +138,22 @@ export default function AccountPage() {
     try {
       passwordSchema.parse(passwordForm)
       setPasswordErrors({})
-
       setIsSaving(true)
-      await new Promise((resolve) => setTimeout(resolve, 1500))
 
-      setPasswordForm({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
+      const {data, error } = await authClient.changePassword({
+        currentPassword: passwordForm.currentPassword, 
+        newPassword: passwordForm.newPassword,
+        revokeOtherSessions: true,
       })
-      setNotification({ type: "success", message: "Password changed successfully!" })
-      setTimeout(() => setNotification(null), 3000)
+
+      if (error) {
+      setNotification({ type: "error", message: error.message || "Failed to change password." });
+      return;
+      }
+
+      // 3. Success logic
+      setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setNotification({ type: "success", message: "Password changed successfully!" });
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {}
