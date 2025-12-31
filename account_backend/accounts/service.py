@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+import os
 
 def verify_better_auth_password(plain_password, stored_password):
     try:
@@ -17,7 +18,7 @@ def verify_better_auth_password(plain_password, stored_password):
             plain_password.encode('utf-8'),
             salt=salt,
             n=16384,
-            r=16,
+            r=8,
             p=1,
             dklen=64
         )
