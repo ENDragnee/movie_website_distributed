@@ -86,8 +86,8 @@ export function useAccountPage() {
       let finalImageKey = avatar
 
       if (uploadedFile) {
-        const { data } = await axios.post(`http://localhost:8000/api/accounts/upload-intent`, {
-          fileName: uploadedFile.name
+        const { data } = await axios.post(`http://localhost:8000/api/accounts/upload_image/`, {
+          file_name: uploadedFile.name
         });
 
         await fetch(data.uploadUrl, {

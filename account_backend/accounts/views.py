@@ -1,13 +1,28 @@
 # views.py
-import hashlib
+import uuid
+from .models import User
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from .serializers import UserUpdateSerializer
 from django.shortcuts import get_object_or_404
+from .services.minio_client import generate_presigned_upload_url
 
-from .models import Account, User
-from .serializers import ChangePasswordSerializer, ChangePasswordSerializer, UserUpdateSerializer
-from django.contrib.auth.hashers import check_password, make_password
+class ImageUploadIntentView(APIView):
+    def post(self, request):
+        file_name = request.data.get('file_name')
+        print("file_name", file_name)
+        extention = file_name.split('.')[-1]
+
+        object_name = f"images/{uuid.uuid4()}.{extention}"
+        url = generate_presigned_upload_url("userasset", object_name)
+
+        print("here is the url", url)
+
+        return Response({
+            "uploadUrl": url,
+            "minioKey": object_name
+        })
 
 class UpdateUserProfileView(APIView):
     def put(self, request, user_id):
@@ -23,5 +38,4 @@ class UpdateUserProfileView(APIView):
             user.refresh_from_db() 
             return Response(UserUpdateSerializer(user).data, status=status.HTTP_200_OK)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    

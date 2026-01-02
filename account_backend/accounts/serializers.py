@@ -1,6 +1,6 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Account, User
+from .models import User
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
