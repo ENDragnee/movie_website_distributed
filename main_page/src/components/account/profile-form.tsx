@@ -54,7 +54,7 @@ export function ProfileForm({
             {/* Avatar Display */}
             <div className="relative">
               <div className="relative h-32 w-32 rounded-full overflow-hidden border-4 border-primary/30 bg-muted">
-                <Image src={uploadPreview || avatar} alt="Profile" fill className="object-cover" />
+                <Image src={ avatar || "/images/avatar.png"} alt="Profile" fill className="object-cover" unoptimized />
               </div>
               {isEditing && (
                 <label className="absolute bottom-0 right-0 bg-primary hover:bg-primary/90 p-2 rounded-full cursor-pointer transition-colors shadow-lg">

@@ -3,32 +3,29 @@
 import axios from "axios"
 import { z } from "zod"
 import { useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import type { RootState } from "@/store/store"
+// import { useDispatch } from "react-redux" // No longer needed for manual updates
 import { passwordSchema } from "@/lib/schemas/password-schema"
 import { authClient } from "@/lib/auth-client"
-import { setSession } from "@/store/slices/auth-slice"
+
+// NEW IMPORTS
+import { useUser } from "@/hooks/useUser" // Your new custom hook
 
 export function useAccountPage() {
-  const dispatch = useDispatch()
-  const { user } = useSelector((state: RootState) => state.auth)
+  // 1. Get user from our smart hook
+  const { user, updateProfile, isUpdating } = useUser();
 
   // ===== UI STATE =====
   const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [notification, setNotification] = useState<{
-    type: "success" | "error"
-    message: string
-  } | null>(null)
+  const [notification, setNotification] = useState<{ type: "success" | "error"; message: string } | null>(null)
 
   // ===== PROFILE STATE =====
   const [formData, setFormData] = useState({
-    name: user?.name ?? "",
-    email: user?.email ?? "",
-    favoriteGenres: user?.favoriteGenres ?? [],
+    name: "",
+    email: "",
+    favoriteGenres: [] as string[],
   })
 
-  const [avatar, setAvatar] = useState(user?.image ?? "")
+  const [avatar, setAvatar] = useState("")
   const [uploadPreview, setUploadPreview] = useState<string | null>(null)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
 
@@ -38,29 +35,26 @@ export function useAccountPage() {
     newPassword: "",
     confirmPassword: "",
   })
-
   const [passwordErrors, setPasswordErrors] = useState<Record<string, string>>({})
 
-  // ===== SYNC WITH REDUX SESSION =====
+  // ===== SYNC FORM WITH USER =====
   useEffect(() => {
     if (user) {
       setFormData({
-        name: user.name,
-        email: user.email,
+        name: user.name ?? "",
+        email: user.email ?? "",
         favoriteGenres: user.favoriteGenres ?? [],
       })
-      setAvatar(user.avatar ?? "")
+      setAvatar(user.image ?? user.image_url ?? "")
     }
   }, [user])
 
-  // ===== HANDLERS =====
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
+  // ... (Keep handleInputChange, handleGenreToggle, handleAvatarUpload as they were) ...
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData((prev) => ({ ...prev, [name]: value }))
   }
-
+  
   const handleGenreToggle = (genre: string) => {
     setFormData((prev) => ({
       ...prev,
@@ -73,7 +67,6 @@ export function useAccountPage() {
   const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
     setUploadedFile(file)
     const reader = new FileReader()
     reader.onloadend = () => setUploadPreview(reader.result as string)
@@ -81,10 +74,12 @@ export function useAccountPage() {
   }
 
   const handleSave = async () => {
-    setIsSaving(true)
-    try {
-      let finalImageKey = avatar
+    if (!user) return;
 
+    try {
+      let finalImageKey = user.image_url; // Default to existing
+
+      // 1. Handle File Upload (Matches your existing logic)
       if (uploadedFile) {
         const { data } = await axios.post(`http://localhost:8000/api/accounts/upload_image/`, {
           file_name: uploadedFile.name
@@ -99,42 +94,42 @@ export function useAccountPage() {
         finalImageKey = data.minioKey;
       }
 
-      const profilePayload = {
+      // 2. Execute the TanStack Mutation
+      await updateProfile({
+        id: user.id,
         name: formData.name,
         email: formData.email,
-        image: finalImageKey
-      }
+        image_url: finalImageKey,
+        favoriteGenres: formData.favoriteGenres // Added back since you have it in formData
+      });
 
-      const response = axios.put(`http://localhost:8000/api/accounts/${user?.id}/profile/`,
-        profilePayload
-      );
+      // 3. UI Success flow
+      setIsEditing(false);
+      setUploadPreview(null); // Clear preview after successful upload
+      setNotification({ type: "success", message: "Account updated successfully!" });
 
-      dispatch(setSession((await response).data));
-
-      setIsEditing(false)
-      setNotification({ type: "success", message: "Account updated successfully!" })
-    } catch {
-      setNotification({ type: "error", message: "Failed to update account." })
+    } catch (error) {
+      console.error("Failed to update profile:", error);
+      setNotification({ type: "error", message: "Failed to update account." });
     } finally {
-      setIsSaving(false)
-      setTimeout(() => setNotification(null), 3000)
+      setTimeout(() => setNotification(null), 3000);
     }
-  }
+  };
 
+  // ... (Keep handleCancel, handlePasswordChange, handlePasswordSubmit as they were) ...
   const handleCancel = () => {
-    setFormData({
-      name: user?.name ?? "",
-      email: user?.email ?? "",
-      favoriteGenres: user?.favoriteGenres ?? [],
-    })
-    setUploadPreview(null)
-    setIsEditing(false)
-  }
+      setFormData({
+        name: user?.name ?? "",
+        email: user?.email ?? "",
+        favoriteGenres: user?.favoriteGenres ?? [],
+      })
+      setUploadPreview(null)
+      setIsEditing(false)
+    }
 
   const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
     setPasswordForm((prev) => ({ ...prev, [name]: value }))
-
     if (passwordErrors[name]) {
       setPasswordErrors((prev) => {
         const copy = { ...prev }
@@ -146,11 +141,11 @@ export function useAccountPage() {
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    try {
+    // ... (Keep your existing password logic) ...
+     try {
       passwordSchema.parse(passwordForm)
       setPasswordErrors({})
-      setIsSaving(true)
+      // setIsSaving(true) // You can use local state or reuse `isUpdating` logic
 
       const { error } = await authClient.changePassword({
         currentPassword: passwordForm.currentPassword,
@@ -159,7 +154,7 @@ export function useAccountPage() {
       })
 
       if (error) {
-        setNotification({ type: "error", message: error.message || "Unkown error from authClient!" })
+        setNotification({ type: "error", message: error.message || "Unknown error" })
         return
       }
 
@@ -177,28 +172,21 @@ export function useAccountPage() {
         setNotification({ type: "error", message: "Failed to change password." })
       }
     } finally {
-      setIsSaving(false)
       setTimeout(() => setNotification(null), 3000)
     }
   }
 
   return {
     user,
-
-    // state
     isEditing,
-    isSaving,
+    isSaving: isUpdating, // Map the mutation loading state here
     notification,
     formData,
     avatar,
     uploadPreview,
     passwordForm,
     passwordErrors,
-
-    // setters
     setIsEditing,
-
-    // handlers
     handleInputChange,
     handleGenreToggle,
     handleAvatarUpload,

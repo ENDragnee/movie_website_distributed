@@ -11,10 +11,31 @@ minio_client = Minio(
 )
 
 def generate_presigned_upload_url(bucket_name, object_name):
-    url = minio_client.presigned_put_object(
-        bucket_name,
-        object_name,
-        expires = timedelta(minutes=5)
-    )
+    if not object_name:
+        return None
+    try:
+        url = minio_client.presigned_put_object(
+            bucket_name,
+            object_name,
+            expires = timedelta(minutes=5)
+        )
 
-    return url
+        return url
+    except Exception as e:
+        print(f"Error generating presigned_url: {e}")
+        return None
+    
+def generate_presigned_download_url(bucket_name, object_name):
+    if not object_name:
+        return None
+    try:
+        url = minio_client.presigned_get_object(
+            bucket_name,
+            object_name,
+            expires = timedelta(minutes=60)
+        )
+
+        return url
+    except Exception as e:
+        print(f"Error generating presigned_url: {e}")
+        return None

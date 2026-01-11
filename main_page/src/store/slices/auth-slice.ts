@@ -6,6 +6,7 @@ interface User {
   name: string;
   email: string;
   image?: string;
+  image_url?: string;
   role?: string;
   avatar?: string;
   favoriteGenres?: string[];

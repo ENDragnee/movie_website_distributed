@@ -29,7 +29,7 @@ export async function getSession(): Promise<Session | null> {
         name: "spline",
         email: "spline@mail.com",
         role: "User",
-        image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+        image: "/images/avatar.png",
       },
       session: {
         id: "doDpadxvMdOCWDVDZHv2vtBD9gYi8bJk",

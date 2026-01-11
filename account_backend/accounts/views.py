@@ -4,10 +4,19 @@ from .models import User
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .serializers import UserUpdateSerializer
+from .serializers import UserUpdateSerializer, UserProfileDetailSerializer
 from django.shortcuts import get_object_or_404
 from .services.minio_client import generate_presigned_upload_url
 
+class UserProfileDetailView(APIView):
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        try:
+            serializer = UserProfileDetailSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(f"Error fetching user detail, {e}")
+        
 class ImageUploadIntentView(APIView):
     def post(self, request):
         file_name = request.data.get('file_name')
@@ -26,9 +35,6 @@ class ImageUploadIntentView(APIView):
 
 class UpdateUserProfileView(APIView):
     def put(self, request, user_id):
-        # DEBUG: Print this to your console to see if data is actually arriving
-        print(f"Request Data: {request.data}") 
-        
         user = get_object_or_404(User, id=user_id)
 
         serializer = UserUpdateSerializer(user, data=request.data, partial=True)
