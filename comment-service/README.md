@@ -167,3 +167,19 @@ From the `comment-service` directory you can bring up the full stack (Mongo, Zoo
 ```bash
 docker compose up -d
 ```
+
+## Kubernetes Deployment
+
+The service ships with two manifests under `k8s/`:
+
+- `comment-service-config.yaml` (maps default Mongo/Kafka connection details into env vars)
+- `comment-service-deployment.yaml` (creates the deployment, probes, and ClusterIP service on port 8080)
+
+Apply them together once Mongo and Kafka are available inside the cluster (the config map targets `mongo:27017` and `kafka:9092` by default, so you can point the service to whichever deployments/services provide those endpoints):
+
+```bash
+kubectl apply -f k8s/comment-service-config.yaml -f k8s/comment-service-deployment.yaml
+```
+
+Inspect the rollout (`kubectl rollout status deployment/comment-service`) and expose any ingress/route you need against the `comment-service` ClusterIP.
+
