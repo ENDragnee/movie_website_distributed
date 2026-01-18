@@ -30,7 +30,7 @@ Stateless Go microservice that powers video comments, replies, and live streams 
 | `MONGO_URI` | MongoDB connection string | |
 | `MONGO_DB` | Database name | defaults to `dracula_comments` |
 | `MONGO_COLLECTION` | Comments collection name | defaults to `comments` |
-| `KAFKA_BROKERS` | Comma-separated list of Kafka bootstrap servers | |
+| `KAFKA_BROKERS` | Comma-separated list of Kafka bootstrap servers | defaults to `kafka:9092` (matches docker-compose) |
 | `KAFKA_TOPIC_COMMENT_CREATED` | Topic for new comments | defaults to `comments.created` |
 | `KAFKA_TOPIC_COMMENT_REPLIED` | Topic for replies | defaults to `comments.replied` |
 
@@ -45,4 +45,12 @@ SERVICE_PORT=8080 MONGO_URI="mongodb://127.0.0.1:27017" \
   KAFKA_TOPIC_COMMENT_CREATED=comments.created \
   KAFKA_TOPIC_COMMENT_REPLIED=comments.replied \
   go run ./cmd/server
+```
+
+## Docker Compose
+
+From the `comment-service` directory you can bring up the full stack (Mongo, ZooKeeper, Kafka, and the comment service) with the built-in compose file:
+
+```bash
+docker compose up -d
 ```
