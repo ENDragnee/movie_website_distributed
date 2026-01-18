@@ -28,7 +28,7 @@ func Load() (*Config, error) {
 		return fallback
 	}
 
-	brokers := parseCSV(os.Getenv("KAFKA_BROKERS"))
+	brokers := parseCSV(get("KAFKA_BROKERS", "kafka:9092"))
 	cfg := &Config{
 		Port:                     get("SERVICE_PORT", defaultPort),
 		MongoURI:                 os.Getenv("MONGO_URI"),
