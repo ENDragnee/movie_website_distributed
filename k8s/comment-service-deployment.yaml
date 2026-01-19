@@ -14,45 +14,45 @@ spec:
     spec:
       containers:
         - name: comment-service
-          image: draculastream/comment-service:latest
-          imagePullPolicy: Always
+          image: myuser/comment-service:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 8080
           env:
             - name: SERVICE_PORT
               valueFrom:
-                configMapKeyRef:
-                  name: comment-service-config
+                secretKeyRef:
+                  name: app-secrets
                   key: SERVICE_PORT
             - name: MONGO_URI
               valueFrom:
-                configMapKeyRef:
-                  name: comment-service-config
+                secretKeyRef:
+                  name: app-secrets
                   key: MONGO_URI
             - name: MONGO_DB
               valueFrom:
                 configMapKeyRef:
-                  name: comment-service-config
+                  name: app-config
                   key: MONGO_DB
             - name: MONGO_COLLECTION
               valueFrom:
                 configMapKeyRef:
-                  name: comment-service-config
+                  name: app-config
                   key: MONGO_COLLECTION
             - name: KAFKA_BROKERS
               valueFrom:
                 configMapKeyRef:
-                  name: comment-service-config
+                  name: app-config
                   key: KAFKA_BROKERS
             - name: KAFKA_TOPIC_COMMENT_CREATED
               valueFrom:
                 configMapKeyRef:
-                  name: comment-service-config
+                  name: app-config
                   key: KAFKA_TOPIC_COMMENT_CREATED
             - name: KAFKA_TOPIC_COMMENT_REPLIED
               valueFrom:
                 configMapKeyRef:
-                  name: comment-service-config
+                  name: app-config
                   key: KAFKA_TOPIC_COMMENT_REPLIED
           readinessProbe:
             httpGet:
@@ -81,3 +81,4 @@ spec:
       port: 8080
       targetPort: 8080
   type: ClusterIP
+

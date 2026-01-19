@@ -23,7 +23,7 @@ spec:
                   number: 3000
 
 ---
-# 2. MAIN PAGE & CONSUMET (dracula.com)
+# 2. MAIN PAGE, COMMENT & CONSUMET (dracula.com)
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -45,6 +45,14 @@ spec:
                 name: consumet-api
                 port:
                   number: 3000
+          # Maps dracula.com/api/comments -> comment-service:8080
+          - path: /api/comments(/|$)(.*)
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: comment-service
+                port:
+                  number: 8080
 
           # Main Page (Catch-all)
           - path: /()(.*)

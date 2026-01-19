@@ -5,10 +5,19 @@ metadata:
 data:
   # Public Domain (Browser Access)
   BETTER_AUTH_URL: "http://auth.dracula.com"
+  NEXT_PUBLIC_ACCOUNT_API_URL: "http://account.dracula.com"
+
   # Internal Cluster URLs (Container-to-Container)
   AUTH_SERVICE_INTERNAL: "http://auth-service:3000"
-  # NEXT_PUBLIC_ACCOUNT_API_URL: "http://account-service:3000"
-  NEXT_PUBLIC_ACCOUNT_API_URL: "http://account.dracula.com"
+
+  # Points to the Kafka Service defined below
+  KAFKA_BROKERS: "kafka-service:9092"
+  KAFKA_TOPIC_COMMENT_CREATED: "comments.created"
+  KAFKA_TOPIC_COMMENT_REPLIED: "comments.replied"
+
+  # MongoDB Config
+  MONGO_DB: "dracula_comments"
+  MONGO_COLLECTION: "comments"
 ---
 apiVersion: v1
 kind: Secret
