@@ -91,12 +91,9 @@ export function useAccountPage() {
 
       // 1. Handle File Upload (Matches your existing logic)
       if (uploadedFile) {
-        const { data } = await axios.post(
-          `${API_URL}/api/accounts/upload_image/`,
-          {
-            file_name: uploadedFile.name,
-          },
-        );
+        const { data } = await axios.post(`${API_URL}/upload_image/`, {
+          file_name: uploadedFile.name,
+        });
 
         await fetch(data.uploadUrl, {
           method: "PUT",
@@ -108,7 +105,7 @@ export function useAccountPage() {
       }
 
       // 2. Execute the TanStack Mutation
-      await updateProfile({
+      updateProfile({
         id: user.id,
         name: formData.name,
         email: formData.email,
@@ -224,4 +221,3 @@ export function useAccountPage() {
     handlePasswordSubmit,
   };
 }
-
