@@ -5,11 +5,12 @@ import cache from '../../utils/cache';
 import { redis, REDIS_TTL } from '../../main';
 import { Redis } from 'ioredis';
 
-const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
+const routes = async (fastify: FastifyInstance, _options: RegisterOptions) => {
   const mangadex = new MANGA.MangaDex();
 
-  fastify.get('/', (_, rp) => {
-    rp.status(200).send({
+  // Root route
+  fastify.get('/', (_, reply) => {
+    reply.send({
       intro: `Welcome to the mangadex provider: check out the provider's website @ ${mangadex.toString.baseUrl}`,
       routes: ['/:query', '/info/:id', '/read/:chapterId'],
       documentation: 'https://docs.consumet.org/#tag/mangadex',
@@ -22,17 +23,17 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
     const { page } = request.query as { page?: number };
 
     try {
-      const res = redis
+      const result = redis
         ? await cache.fetch(
             redis as Redis,
             `mangadex:search:${query}:${page ?? 1}`,
             () => mangadex.search(query, page),
-            REDIS_TTL,
+            REDIS_TTL
           )
         : await mangadex.search(query, page);
 
-      reply.status(200).send(res);
-    } catch (err) {
+      reply.send(result);
+    } catch (error) {
       reply.status(500).send({
         message: 'Something went wrong. Please try again later.',
       });
@@ -41,20 +42,20 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
 
   // --- INFO ---
   fastify.get('/info/:id', async (request: FastifyRequest, reply: FastifyReply) => {
-    const id = decodeURIComponent((request.params as { id: string }).id);
+    const { id } = request.params as { id: string };
 
     try {
-      const res = redis
+      const result = redis
         ? await cache.fetch(
             redis as Redis,
             `mangadex:info:${id}`,
-            () => mangadex.fetchMangaInfo(id),
-            REDIS_TTL,
+            () => mangadex.fetchMangaInfo(decodeURIComponent(id)),
+            REDIS_TTL
           )
-        : await mangadex.fetchMangaInfo(id);
+        : await mangadex.fetchMangaInfo(decodeURIComponent(id));
 
-      reply.status(200).send(res);
-    } catch (err) {
+      reply.send(result);
+    } catch (error) {
       reply.status(500).send({
         message: 'Something went wrong. Please try again later.',
       });
@@ -62,29 +63,26 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
   });
 
   // --- READ CHAPTER ---
-  fastify.get(
-    '/read/:chapterId',
-    async (request: FastifyRequest, reply: FastifyReply) => {
-      const { chapterId } = request.params as { chapterId: string };
+  fastify.get('/read/:chapterId', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { chapterId } = request.params as { chapterId: string };
 
-      try {
-        const res = redis
-          ? await cache.fetch(
-              redis as Redis,
-              `mangadex:read:${chapterId}`,
-              () => mangadex.fetchChapterPages(chapterId),
-              REDIS_TTL,
-            )
-          : await mangadex.fetchChapterPages(chapterId);
+    try {
+      const result = redis
+        ? await cache.fetch(
+            redis as Redis,
+            `mangadex:read:${chapterId}`,
+            () => mangadex.fetchChapterPages(chapterId),
+            REDIS_TTL
+          )
+        : await mangadex.fetchChapterPages(chapterId);
 
-        reply.status(200).send(res);
-      } catch (err) {
-        reply.status(500).send({
-          message: 'Something went wrong. Please try again later.',
-        });
-      }
-    },
-  );
+      reply.send(result);
+    } catch (error) {
+      reply.status(500).send({
+        message: 'Something went wrong. Please try again later.',
+      });
+    }
+  });
 };
 
 export default routes;
