@@ -146,7 +146,7 @@ export default function Navbar() {
                   <p className="text-xs text-muted-foreground truncate">{user.email}</p>
                 </div>
                 <div className="p-1">
-                  <Link href="/profile" className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors">
+                  <Link href="/account" className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors">
                     <User className="h-4 w-4" /> Profile
                   </Link>
                   <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-white/5 hover:text-foreground transition-colors">

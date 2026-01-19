@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: account-service
+  template:
+    metadata:
+      labels:
+        app: account-service
+    spec:
+      containers:
+        - name: account-service
+          image: myuser/account-service:latest
+          imagePullPolicy: Never # Uses local image
+          ports:
+            - containerPort: 8000
+          env:
+            # Database Configuration (Matches your Secrets)
+            - name: POSTGRES_DB
+              value: "ds_movie_auth"
+            - name: POSTGRES_USER
+              value: "admin"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets # Reusing the existing secret
+                  key: POSTGRES_PASSWORD # Assuming you used this, or hardcode the 'qazwsxedc' here or add a new key
+            # CRITICAL: Points to the existing Postgres Kubernetes Service
+            - name: POSTGRES_HOST
+              value: "postgres-service"
+            - name: DJANGO_SUPERUSER_USERNAME
+              value: "admin"
+            - name: DJANGO_SUPERUSER_PASSWORD
+              value: "admin"
+            - name: DJANGO_SUPERUSER_EMAIL
+              value: "admin@dracula.com"
+
+          # Run migrations on startup
+          # Warning: If using the same DB as BetterAuth, ensure table names don't clash!
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              python manage.py migrate
+              python manage.py collectstatic --noinput
+              gunicorn account_backend.wsgi:application --bind 0.0.0.0:8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: account-service
+spec:
+  selector:
+    app: account-service
+  ports:
+    - protocol: TCP
+      port: 8000 # Cluster internal port
+      targetPort: 8000 # Container port

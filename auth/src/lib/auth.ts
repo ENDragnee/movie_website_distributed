@@ -9,19 +9,18 @@ export const auth = betterAuth({
     provider: "postgresql",
   }),
 
-  // trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS
-  //   ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
-  //   : ["http://dracula.com", "http://localhost:3000"],
+  trustedOrigins: process.env.BETTER_AUTH_TRUSTED_ORIGINS
+    ? process.env.BETTER_AUTH_TRUSTED_ORIGINS.split(",")
+    : ["http://dracula.com", "http://localhost:3000"],
 
-  // // --- CRITICAL FIX FOR SUBDOMAINS ---
-  // advanced: {
-  //   crossSubDomainCookies: {
-  //     enabled: true,
-  //     domain: "dracula.com",
-  //   },
-  //   defaultRedirectURL: "http://dracula.com",
-  // },
-  // ----------------------------------
+  // --- CRITICAL FIX FOR SUBDOMAINS ---
+  advanced: {
+    crossSubDomainCookies: {
+      enabled: true,
+      domain: "dracula.com",
+    },
+    defaultRedirectURL: "http://dracula.com",
+  },
 
   user: {
     additionalFields: {

@@ -54,3 +54,24 @@ spec:
                 name: main-page
                 port:
                   number: 3000
+---
+# 3. ACCOUNT SERVICE
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: account-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+spec:
+  rules:
+    - host: account.dracula.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: account-service
+                port:
+                  number: 8000

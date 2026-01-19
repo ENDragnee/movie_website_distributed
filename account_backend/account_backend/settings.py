@@ -14,7 +14,7 @@ SECRET_KEY = 'django-insecure-%kd-kj+e!_=#lj2yeh&c&%^ig6&_3fyvu(cog_j*#^azkn(jtt
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -83,10 +83,10 @@ WSGI_APPLICATION = 'account_backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'ds_movie_auth',
-        'USER': 'admin',
-        'PASSWORD': 'qazwsxedc',
-        'HOST': 'localhost',
+        'NAME': os.environ.get('POSTGRES_DB', 'ds_movie_auth'),
+        'USER': os.environ.get('POSTGRES_USER', 'admin'),
+        'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'qazwsxedc'),
+        'HOST': os.environ.get('POSTGRES_HOST', 'postgres-service'),
         'PORT': '5432',
     }
 }
@@ -133,3 +133,4 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.environ.get('STATIC_ROOT', os.path.join(BASE_DIR, 'staticfiles'))

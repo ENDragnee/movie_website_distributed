@@ -3,6 +3,7 @@ from rest_framework import serializers
 from .models import User
 from .services.minio_client import generate_presigned_download_url
 
+
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -14,9 +15,10 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Email already in use")
         return value
 
-    
+
 class UserProfileDetailSerializer(serializers.ModelSerializer):
     image_url = serializers.SerializerMethodField()
+
     class Meta:
         model = User
         fields = ["name", "email", "image", "image", "image_url"]
