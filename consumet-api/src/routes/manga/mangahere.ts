@@ -1,15 +1,24 @@
-import { FastifyRequest, FastifyReply, FastifyInstance, RegisterOptions } from 'fastify';
+import {
+  FastifyInstance,
+  FastifyReply,
+  FastifyRequest,
+  RegisterOptions,
+} from 'fastify';
+
 import { MANGA } from '@consumet/extensions';
+import { Redis } from 'ioredis';
 
 import cache from '../../utils/cache';
 import { redis, REDIS_TTL } from '../../main';
-import { Redis } from 'ioredis';
 
-const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
+const routes = async (
+  fastify: FastifyInstance,
+  options: RegisterOptions,
+) => {
   const mangahere = new MANGA.MangaHere();
 
-  fastify.get('/', (_, rp) => {
-    rp.status(200).send({
+  fastify.get('/', (_, reply) => {
+    reply.status(200).send({
       intro: `Welcome to the MangaHere provider: check out the provider's website @ ${mangahere.toString.baseUrl}`,
       routes: ['/:query', '/info', '/read'],
       documentation: 'https://docs.consumet.org/#tag/mangahere',
@@ -31,7 +40,7 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
         : await mangahere.search(query, page);
 
       reply.status(200).send(res);
-    } catch (err) {
+    } catch {
       reply.status(500).send({
         message: 'Something went wrong. Please try again later.',
       });
@@ -39,9 +48,11 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
   });
 
   fastify.get('/info', async (request: FastifyRequest, reply: FastifyReply) => {
-    const id = (request.query as { id: string }).id;
+    const { id } = request.query as { id: string };
 
-    if (!id) return reply.status(400).send({ message: 'id is required' });
+    if (!id) {
+      return reply.status(400).send({ message: 'id is required' });
+    }
 
     try {
       const res = redis
@@ -54,7 +65,7 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
         : await mangahere.fetchMangaInfo(id);
 
       reply.status(200).send(res);
-    } catch (err) {
+    } catch {
       reply.status(500).send({
         message: 'Something went wrong. Please try again later.',
       });
@@ -62,9 +73,11 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
   });
 
   fastify.get('/read', async (request: FastifyRequest, reply: FastifyReply) => {
-    const chapterId = (request.query as { chapterId: string }).chapterId;
+    const { chapterId } = request.query as { chapterId: string };
 
-    if (!chapterId) return reply.status(400).send({ message: 'chapterId is required' });
+    if (!chapterId) {
+      return reply.status(400).send({ message: 'chapterId is required' });
+    }
 
     try {
       const res = redis
@@ -77,7 +90,7 @@ const routes = async (fastify: FastifyInstance, options: RegisterOptions) => {
         : await mangahere.fetchChapterPages(chapterId);
 
       reply.status(200).send(res);
-    } catch (err) {
+    } catch {
       reply.status(500).send({
         message: 'Something went wrong. Please try again later.',
       });
