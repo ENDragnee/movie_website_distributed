@@ -20,4 +20,4 @@ COPY ./entrypoint.sh /code/
 RUN chmod +x /code/entrypoint.sh
 
 ENTRYPOINT ["/code/entrypoint.sh"]
-CMD ["gunicorn", "account_backend.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "watchlist_service.asgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "-k", "uvicorn.workers.UvicornWorker"]
