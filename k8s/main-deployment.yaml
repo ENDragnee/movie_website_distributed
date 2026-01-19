@@ -33,6 +33,11 @@ spec:
                   key: AUTH_SERVICE_INTERNAL
             - name: NEXT_PUBLIC_BETTER_AUTH_URL
               value: "http://dracula.com"
+            - name: NEXT_PUBLIC_ACCOUNT_API_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: app-config
+                  key: NEXT_PUBLIC_ACCOUNT_API_URL
 ---
 apiVersion: v1
 kind: Service

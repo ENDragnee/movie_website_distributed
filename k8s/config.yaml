@@ -7,6 +7,8 @@ data:
   BETTER_AUTH_URL: "http://auth.dracula.com"
   # Internal Cluster URLs (Container-to-Container)
   AUTH_SERVICE_INTERNAL: "http://auth-service:3000"
+  # NEXT_PUBLIC_ACCOUNT_API_URL: "http://account-service:3000"
+  NEXT_PUBLIC_ACCOUNT_API_URL: "http://account.dracula.com"
 ---
 apiVersion: v1
 kind: Secret

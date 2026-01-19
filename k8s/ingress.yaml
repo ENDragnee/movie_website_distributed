@@ -75,3 +75,23 @@ spec:
                 name: account-service
                 port:
                   number: 8000
+# 4. MinIO
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m" # Allow larger uploads via console
+spec:
+  rules:
+    - host: files.dracula.com # Map this in your hosts file
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio-service
+                port:
+                  number: 9001 # Console port

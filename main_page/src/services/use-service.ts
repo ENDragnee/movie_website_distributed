@@ -1,7 +1,9 @@
 // services/user-service.ts
 import axios from "axios";
 
-const API_URL = "http://localhost:8000/api/accounts";
+export const API_URL =
+  process.env.NEXT_PUBLIC_ACCOUNT_API_URL ||
+  "http://account.dracula.com/api/accounts";
 
 export interface UserProfile {
   id: string;
@@ -17,7 +19,10 @@ export const fetchProfile = async (userId: string): Promise<UserProfile> => {
   return data;
 };
 
-export const updateProfile = async ({ id, ...patch }: Partial<UserProfile> & { id: string }) => {
+export const updateProfile = async ({
+  id,
+  ...patch
+}: Partial<UserProfile> & { id: string }) => {
   const { data } = await axios.put(`${API_URL}/${id}/update_profile/`, patch);
   return data;
 };

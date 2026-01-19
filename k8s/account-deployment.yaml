@@ -27,17 +27,35 @@ spec:
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: app-secrets # Reusing the existing secret
-                  key: POSTGRES_PASSWORD # Assuming you used this, or hardcode the 'qazwsxedc' here or add a new key
-            # CRITICAL: Points to the existing Postgres Kubernetes Service
+                  name: app-secrets
+                  key: POSTGRES_PASSWORD
             - name: POSTGRES_HOST
               value: "postgres-service"
+            #Django Configuration
             - name: DJANGO_SUPERUSER_USERNAME
               value: "admin"
             - name: DJANGO_SUPERUSER_PASSWORD
               value: "admin"
             - name: DJANGO_SUPERUSER_EMAIL
               value: "admin@dracula.com"
+            #MiniIO Configuration
+            - name: MINIO_ENDPOINT
+              value: "minio-service:9000"
+
+            - name: MINIO_ROOT_USER
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MINIO_ROOT_USER
+
+            - name: MINIO_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: MINIO_ROOT_PASSWORD
+
+            - name: MINIO_USE_SSL
+              value: "False"
 
           # Run migrations on startup
           # Warning: If using the same DB as BetterAuth, ensure table names don't clash!
