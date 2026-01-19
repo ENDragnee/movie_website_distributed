@@ -1,6 +1,7 @@
 # serializers.py
 from rest_framework import serializers
-from .models import Account, User
+from .models import User
+from .services.minio_client import generate_presigned_download_url
 
 class UserUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -13,13 +14,16 @@ class UserUpdateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Email already in use")
         return value
 
+    
+class UserProfileDetailSerializer(serializers.ModelSerializer):
+    image_url = serializers.SerializerMethodField()
+    class Meta:
+        model = User
+        fields = ["name", "email", "image", "image", "image_url"]
 
-class ChangePasswordSerializer(serializers.Serializer):
-    current_password = serializers.CharField(required=True)
-    new_password = serializers.CharField(required=True)
-    confirm_password = serializers.CharField(required=True)
-
-    def validate(self, data):
-        if data['new_password'] != data['confirm_password']:
-            raise serializers.ValidationError({"confirm_password": "New passwords do not match."})
-        return data
+    def get_image_url(self, obj):
+        if obj.image:
+            try:
+                return generate_presigned_download_url("userasset", obj.image)
+            except Exception:
+                return "/images/avatar.png"

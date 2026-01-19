@@ -26,13 +26,13 @@ export async function getSession(): Promise<Session | null> {
     return {
       user: {
         id: "HUxrqJA0kK9w4cOFwOdzR66k4KFj6mKO", // Use an ID that matches your Django DB for testing
-        name: "Ma",
-        email: "ma@mail.com",
+        name: "spline",
+        email: "spline@mail.com",
         role: "User",
-        image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
+        image: "/images/avatar.png",
       },
       session: {
-        id: "ACBoYX3EbRBz4d1X1j9XWEQCUHNHUadb",
+        id: "doDpadxvMdOCWDVDZHv2vtBD9gYi8bJk",
         expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
       }
     };

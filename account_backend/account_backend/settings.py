@@ -1,5 +1,4 @@
 import os
-import dj_database_url
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,9 +26,9 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    "corsheaders",
     'accounts',
     "rest_framework",
-    "corsheaders",
 ]
 
 # password hashers
@@ -41,6 +40,7 @@ PASSWORD_HASHERS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -48,6 +48,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+]
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000", # change this later to the main_page endpoint (dracula.com)
 ]
 
 ROOT_URLCONF = 'account_backend.urls'
@@ -105,6 +109,12 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+# MinIO Configuration
+MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "localhost:9000")
+MINIO_ACCESS_KEY = os.environ.get("MINIO_ROOT_USER")
+MINIO_SECRET_KEY = os.environ.get("MINIO_ROOT_PASSWORD")
+MINIO_USE_SSL = os.environ.get("MINIO_USE_SSL", "False") == "True"
 
 
 # Internationalization

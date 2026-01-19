@@ -1,20 +1,40 @@
 # views.py
-import hashlib
+import uuid
+from .models import User
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework import status
+from .serializers import UserUpdateSerializer, UserProfileDetailSerializer
 from django.shortcuts import get_object_or_404
+from .services.minio_client import generate_presigned_upload_url
 
-from .service import verify_better_auth_password
-from .models import Account, User
-from .serializers import ChangePasswordSerializer, ChangePasswordSerializer, UserUpdateSerializer
-from django.contrib.auth.hashers import check_password, make_password
+class UserProfileDetailView(APIView):
+    def get(self, request, user_id):
+        user = get_object_or_404(User, id=user_id)
+        try:
+            serializer = UserProfileDetailSerializer(user)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response(f"Error fetching user detail, {e}")
+        
+class ImageUploadIntentView(APIView):
+    def post(self, request):
+        file_name = request.data.get('file_name')
+        print("file_name", file_name)
+        extention = file_name.split('.')[-1]
+
+        object_name = f"images/{uuid.uuid4()}.{extention}"
+        url = generate_presigned_upload_url("userasset", object_name)
+
+        print("here is the url", url)
+
+        return Response({
+            "uploadUrl": url,
+            "minioKey": object_name
+        })
 
 class UpdateUserProfileView(APIView):
     def put(self, request, user_id):
-        # DEBUG: Print this to your console to see if data is actually arriving
-        print(f"Request Data: {request.data}") 
-        
         user = get_object_or_404(User, id=user_id)
 
         serializer = UserUpdateSerializer(user, data=request.data, partial=True)
@@ -24,37 +44,4 @@ class UpdateUserProfileView(APIView):
             user.refresh_from_db() 
             return Response(UserUpdateSerializer(user).data, status=status.HTTP_200_OK)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-
-class ChangePasswordView(APIView):
-    def post(self, request, user_id):
-        user = get_object_or_404(User, id=user_id)
-        account = get_object_or_404(Account, user_id=user_id)
-
-        serializer = ChangePasswordSerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        # Use the custom verify function instead of check_password
-        current_password = serializer.validated_data['current_password']
-        if not verify_better_auth_password(current_password, account.password):
-            return Response({"current_password": "Current password is incorrect."}, status=status.HTTP_400_BAD_REQUEST)
-
-        # To SAVE the new password in the SAME format (so Better Auth can read it):
-        import os
-        new_salt = os.urandom(16) # 16 bytes = 32 hex chars
-        new_hash = hashlib.scrypt(
-            serializer.validated_data['new_password'].encode('utf-8'),
-            salt=new_salt,
-            n=16384,
-            r=8,
-            p=1,
-            dklen=64
-        )
-        
-        # Store back in salt:hash format
-        account.password = f"{new_salt.hex()}:{new_hash.hex()}"
-        account.save()
-
-        return Response({"message": "Password updated successfully."}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)    

@@ -19,29 +19,3 @@ class User(AbstractBaseUser):
     class Meta:
         db_table = 'user' # Matches @@map("user")
         managed = False
-
-class Account(models.Model):
-    id = models.CharField(primary_key=True, max_length=255)
-    account_id = models.CharField(max_length=255, db_column="accountId")
-    provider_id = models.CharField(max_length=255, db_column="providerId")
-    user_id = models.CharField(max_length=255, db_column="userId")
-
-    access_token = models.TextField(null=True, db_column="accessToken")
-    refresh_token = models.TextField(null=True, db_column="refreshToken")
-    id_token = models.TextField(null=True, db_column="idToken")
-
-    access_token_expires_at = models.DateTimeField(null=True, db_column="accessTokenExpiresAt")
-    refresh_token_expires_at = models.DateTimeField(null=True, db_column="refreshTokenExpiresAt")
-
-    scope = models.TextField(null=True)
-    password = models.TextField(null=True)
-
-    created_at = models.DateTimeField(db_column="createdAt")
-    updated_at = models.DateTimeField(db_column="updatedAt")
-
-    class Meta:
-        managed = False              
-        db_table = "account"
-        indexes = [
-            models.Index(fields=["user_id"]),
-        ]
