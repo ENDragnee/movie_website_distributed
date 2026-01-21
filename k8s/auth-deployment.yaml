@@ -12,28 +12,17 @@ spec:
       labels:
         app: auth-service
     spec:
-      # --- DATABASE INITIALIZATION ---
-      # initContainers:
-      #   - name: init-db
-      #     image: myuser/auth-service:latest
-      #     imagePullPolicy: Never
-      #     # UPDATED COMMAND: Explicitly point to prisma.config.ts
-      #     command:
-      #       [
-      #         "/bin/sh",
-      #         "-c",
-      #         "npx prisma db push --accept-data-loss --config prisma.config.ts",
-      #       ]
-      #     securityContext:
-      #       runAsUser: 0 # Run as root to allow writing temp files during migration
-      #     env:
-      #       - name: DATABASE_URL
-      #         valueFrom:
-      #           secretKeyRef:
-      #             name: app-secrets
-      #             key: DATABASE_URL
-      # -------------------------------
-
+      initContainers:
+        - name: init-db
+          image: myuser/auth-service:latest
+          imagePullPolicy: Never
+          command: ["/bin/sh", "-c", "pnpm prisma push --accept-data-loss"]
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DATABASE_URL
       containers:
         - name: auth-service
           image: myuser/auth-service:latest
