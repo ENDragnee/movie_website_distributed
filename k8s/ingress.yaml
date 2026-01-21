@@ -83,6 +83,7 @@ spec:
                 name: account-service
                 port:
                   number: 8000
+---
 # 4. MinIO
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -103,3 +104,25 @@ spec:
                 name: minio-service
                 port:
                   number: 9001 # Console port
+---
+#5. Watchlist service
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: watchlist-ingress
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "http://dracula.com, http://auth.dracula.com"
+spec:
+  rules:
+    - host: watchlist.dracula.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: watchlist-service
+                port:
+                  number: 8000
