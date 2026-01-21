@@ -5,9 +5,14 @@ import Hls from 'hls.js';
 import {
   Play, Pause, Volume2, VolumeX, Maximize, Minimize,
   Settings, Loader2, Check, ChevronRight, ChevronLeft,
-  Languages, Signal
+  Languages, Signal, Captions // New Icon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+interface Subtitle {
+  url: string;
+  lang: string;
+}
 
 interface HLSPlayerProps {
   src: string;
@@ -15,6 +20,7 @@ interface HLSPlayerProps {
   autoPlay?: boolean;
   currentAudio?: 'sub' | 'dub';
   onAudioChange?: (type: 'sub' | 'dub') => void;
+  subtitles?: Subtitle[];
 }
 
 interface QualityLevel {
@@ -29,7 +35,8 @@ export default function HLSPlayer({
   poster,
   autoPlay = false,
   currentAudio = 'sub',
-  onAudioChange
+  onAudioChange,
+  subtitles = []
 }: HLSPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,11 +55,12 @@ export default function HLSPlayer({
 
   // --- Settings State ---
   const [showSettings, setShowSettings] = useState(false);
-  const [settingsView, setSettingsView] = useState<'main' | 'quality'>('main');
+  const [settingsView, setSettingsView] = useState<'main' | 'quality' | 'subtitles'>('main');
 
-  // --- Quality Manager State ---
+  // --- Quality & Subtitle State ---
   const [qualities, setQualities] = useState<QualityLevel[]>([]);
   const [currentQuality, setCurrentQuality] = useState<number>(-1); // -1 is Auto
+  const [currentSubtitle, setCurrentSubtitle] = useState<number>(-1); // -1 is Off, otherwise index in subtitles array
 
   // Helper: Format time
   const formatTime = (seconds: number) => {
@@ -69,21 +77,20 @@ export default function HLSPlayer({
     const video = videoRef.current;
     if (!video || !src) return;
 
-    // Fix: Wrap state updates in setTimeout to avoid "synchronous setState in effect" error
-    // This allows the initial render to finish before we reset for the new source
+    // Reset state for new video
     const resetTimer = setTimeout(() => {
       setIsLoading(true);
       setQualities([]);
       setCurrentQuality(-1);
+      // Default to first subtitle if available, or off (-1)
+      setCurrentSubtitle(subtitles.length > 0 ? 0 : -1);
       setIsPlaying(false);
     }, 0);
 
     let hls: Hls | null = null;
 
     if (Hls.isSupported()) {
-      if (hlsRef.current) {
-        hlsRef.current.destroy();
-      }
+      if (hlsRef.current) hlsRef.current.destroy();
 
       hls = new Hls({
         xhrSetup: (xhr) => { xhr.withCredentials = false; },
@@ -95,29 +102,19 @@ export default function HLSPlayer({
       hls.loadSource(src);
       hls.attachMedia(video);
 
-      // Fix: Removed unused 'event' argument by using '_'
       hls.on(Hls.Events.MANIFEST_PARSED, (_, data) => {
         setIsLoading(false);
-
-        // Extract Quality Levels
         const levels = data.levels.map((level, index) => ({
           index,
           height: level.height,
           bitrate: level.bitrate,
           name: level.height ? `${level.height}p` : 'Unknown'
         }));
-
-        // Sort high to low
         setQualities(levels.sort((a, b) => b.height - a.height));
 
         if (autoPlay) {
           video.play().catch((err) => console.warn("Autoplay prevented:", err));
         }
-      });
-
-      // Fix: Removed unused arguments completely
-      hls.on(Hls.Events.LEVEL_SWITCHED, () => {
-        // Optional: logic for UI updates when auto-quality switches
       });
 
       hls.on(Hls.Events.ERROR, (_, data) => {
@@ -138,7 +135,6 @@ export default function HLSPlayer({
         }
       });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-      // Native HLS (Safari)
       video.src = src;
       video.addEventListener('loadedmetadata', () => {
         setIsLoading(false);
@@ -151,7 +147,7 @@ export default function HLSPlayer({
       if (hls) hls.destroy();
       if (hlsRef.current) hlsRef.current.destroy();
     };
-  }, [src, autoPlay]);
+  }, [src, autoPlay, subtitles]); // Added subtitles to dependency to reset default
 
   // --- Handlers ---
 
@@ -159,8 +155,23 @@ export default function HLSPlayer({
     if (hlsRef.current) {
       hlsRef.current.currentLevel = index;
       setCurrentQuality(index);
-      setShowSettings(false);
+      setSettingsView('main'); // Go back to main menu instead of closing
     }
+  };
+
+  const handleSubtitleChange = (index: number) => {
+    setCurrentSubtitle(index);
+    // Native track switching logic is handled by React rendering the <track> elements with 'default' prop
+    // However, changing 'default' prop dynamically doesn't always update active track instantly in all browsers.
+    // We force update the video textTracks mode.
+    if (videoRef.current) {
+      const tracks = videoRef.current.textTracks;
+      for (let i = 0; i < tracks.length; i++) {
+        // Match index. Note: tracks order matches <track> tag order.
+        tracks[i].mode = (i === index) ? 'showing' : 'hidden';
+      }
+    }
+    setSettingsView('main');
   };
 
   const togglePlay = useCallback(() => {
@@ -221,7 +232,19 @@ export default function HLSPlayer({
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
         crossOrigin="anonymous"
-      />
+      >
+        {/* Render Subtitles Tracks */}
+        {subtitles.map((sub, index) => (
+          <track
+            key={index}
+            kind="subtitles"
+            src={sub.url}
+            srcLang={sub.lang.substring(0, 2).toLowerCase()}
+            label={sub.lang}
+            default={index === currentSubtitle}
+          />
+        ))}
+      </video>
 
       {/* --- Big Play Button --- */}
       {!isPlaying && !isLoading && !showSettings && (
@@ -240,7 +263,7 @@ export default function HLSPlayer({
         <div className="absolute bottom-16 right-4 z-40 w-64 overflow-hidden rounded-lg border border-white/10 bg-black/95 p-2 shadow-2xl backdrop-blur-md animate-in fade-in slide-in-from-bottom-5">
           {settingsView === 'main' ? (
             <div className="flex flex-col gap-1">
-              {/* Quality Trigger */}
+              {/* Quality Menu Trigger */}
               <button
                 onClick={() => setSettingsView('quality')}
                 className="flex w-full items-center justify-between rounded px-3 py-2 text-sm text-white hover:bg-white/10"
@@ -253,6 +276,22 @@ export default function HLSPlayer({
                   <ChevronRight className="h-3 w-3" />
                 </div>
               </button>
+
+              {/* Subtitles Menu Trigger */}
+              {subtitles.length > 0 && (
+                <button
+                  onClick={() => setSettingsView('subtitles')}
+                  className="flex w-full items-center justify-between rounded px-3 py-2 text-sm text-white hover:bg-white/10"
+                >
+                  <div className="flex items-center gap-2">
+                    <Captions className="h-4 w-4" /> Subtitles
+                  </div>
+                  <div className="flex items-center gap-1 text-muted-foreground text-xs truncate max-w-[80px]">
+                    {currentSubtitle === -1 ? 'Off' : subtitles[currentSubtitle]?.lang}
+                    <ChevronRight className="h-3 w-3" />
+                  </div>
+                </button>
+              )}
 
               {/* Audio Toggle Trigger */}
               {onAudioChange && (
@@ -273,7 +312,8 @@ export default function HLSPlayer({
                 </button>
               )}
             </div>
-          ) : (
+          ) : settingsView === 'quality' ? (
+            /* Quality Sub-Menu */
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => setSettingsView('main')}
@@ -304,6 +344,42 @@ export default function HLSPlayer({
                   >
                     <span>{q.name}</span>
                     {currentQuality === q.index && <Check className="h-3 w-3" />}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            /* Subtitles Sub-Menu */
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => setSettingsView('main')}
+                className="flex w-full items-center gap-2 border-b border-white/10 px-2 py-2 text-xs font-bold text-muted-foreground hover:text-white"
+              >
+                <ChevronLeft className="h-3 w-3" /> Back
+              </button>
+
+              <div className="max-h-48 overflow-y-auto">
+                <button
+                  onClick={() => handleSubtitleChange(-1)}
+                  className={cn(
+                    "flex w-full items-center justify-between rounded px-3 py-2 text-sm hover:bg-white/10",
+                    currentSubtitle === -1 ? "text-primary" : "text-white"
+                  )}
+                >
+                  <span>Off</span>
+                  {currentSubtitle === -1 && <Check className="h-3 w-3" />}
+                </button>
+                {subtitles.map((sub, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleSubtitleChange(idx)}
+                    className={cn(
+                      "flex w-full items-center justify-between rounded px-3 py-2 text-sm hover:bg-white/10",
+                      currentSubtitle === idx ? "text-primary" : "text-white"
+                    )}
+                  >
+                    <span className="truncate">{sub.lang}</span>
+                    {currentSubtitle === idx && <Check className="h-3 w-3 flex-shrink-0" />}
                   </button>
                 ))}
               </div>
