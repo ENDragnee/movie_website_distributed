@@ -15,7 +15,7 @@ const getBaseUrl = () => {
 
 export const api = axios.create({
   // Append the specific route you are targeting
-  baseURL: `${getBaseUrl()}/meta/anilist`,
+  baseURL: `${getBaseUrl()}/`,
   headers: {
     "Content-Type": "application/json",
   },
