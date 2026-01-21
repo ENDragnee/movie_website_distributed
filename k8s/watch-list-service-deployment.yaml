@@ -16,21 +16,32 @@ spec:
     spec:
       containers:
         - name: watchlist-service
-          image: watchlist-service:latest
+          image: myuser/watchlist-service:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 8000
           env:
             # DATABASE_URL should be provided as a Kubernetes Secret in production.
             # Example secret creation:
             # kubectl create secret generic database-url --from-literal=DATABASE_URL='postgres://user:pass@host:5432/db'
-            - name: DATABASE_URL
-              valueFrom:
-                secretKeyRef:
-                  name: database-url
-                  key: DATABASE_URL
             - name: JWT_SECRET
               valueFrom:
                 secretKeyRef:
-                  name: jwt-secret
-                  key: JWT_SECRET
+                  name: app-secrets
+                  key: BETTER_AUTH_SECRET
           resources: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: watchlist-service
+  labels:
+    app: watchlist-service
+spec:
+  type: ClusterIP
+  selector:
+    app: watchlist-service
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
