@@ -18,7 +18,7 @@ import HLSPlayer from '@/components/player/hls-player';
 import {
   Maximize, Minimize, Heart, ChevronRight, List, Loader2,
   Calendar, Star, PlayCircle, Share2, Download, Info, Search,
-  ChevronLeft, ArrowLeft, MessageSquare, Send, User, Lock
+  ChevronLeft, ArrowLeft, MessageSquare, Send, User, Lock, Captions, Mic
 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,7 @@ interface Episode {
   title?: string;
   description?: string;
   image?: string;
+  isFiller?: boolean;
 }
 
 interface Studio {
@@ -41,12 +42,9 @@ interface Studio {
 
 interface AnimeInfo {
   id: string;
-  title: {
-    english?: string;
-    romaji?: string;
-    native?: string;
-  };
-  cover: string;
+  title: string; // AnimeKai returns title as string
+  japaneseTitle?: string;
+  cover?: string;
   image: string;
   description: string;
   rating?: number;
@@ -54,6 +52,8 @@ interface AnimeInfo {
   type?: string;
   status?: string;
   genres?: string[];
+  sub?: number;
+  dub?: number;
   studios?: Studio[];
   episodes: Episode[];
 }
@@ -64,20 +64,26 @@ interface StreamSource {
   isM3U8: boolean;
 }
 
+interface Subtitle {
+  url: string;
+  lang: string;
+  kind: string;
+}
+
 interface StreamData {
   headers?: {
     Referer?: string;
   };
   sources: StreamSource[];
+  subtitles?: Subtitle[];
   download?: string;
 }
 
 // --- Mock Data & Config ---
-const IS_LOGGED_IN = false; // Toggle this to true to unlock comments
+const IS_LOGGED_IN = false; // Toggle to test comments
 const MOCK_COMMENTS = [
-  { id: 1, user: "AnimeFan99", text: "This episode was absolute cinema! The animation quality went through the roof.", time: "2 hours ago", avatar: "AF" },
-  { id: 2, user: "DraculaLover", text: "Can't believe they ended it on a cliffhanger like that. Next week can't come soon enough.", time: "5 hours ago", avatar: "DL" },
-  { id: 3, user: "Guest_User", text: "Does anyone know the name of the OST that played during the fight scene?", time: "1 day ago", avatar: "GU" },
+  { id: 1, user: "AnimeFan99", text: "The animation quality in this episode was insane!", time: "2 hours ago", avatar: "AF" },
+  { id: 2, user: "DraculaLover", text: "Can't wait for next week.", time: "5 hours ago", avatar: "DL" },
 ];
 
 export default function WatchPage() {
@@ -100,7 +106,8 @@ export default function WatchPage() {
   const { data: anime, isLoading: loadingInfo, isError } = useQuery<AnimeInfo>({
     queryKey: ['anime', animeId],
     queryFn: async () => {
-      const { data } = await api.get(`/info/${animeId}`);
+      // Use relative path for Ingress routing (/anime -> Consumet)
+      const { data } = await api.get(`/anime/animekai/info?id=${animeId}`);
       return data;
     },
     staleTime: 1000 * 60 * 60,
@@ -112,12 +119,12 @@ export default function WatchPage() {
     return anime.episodes.find((e) => e.id === currentEpisodeId) || anime.episodes[0];
   }, [anime, currentEpisodeId]);
 
-  // --- 3. Fetch Stream (Triggers Refetch on Audio Change) ---
+  // --- 3. Fetch Stream ---
   const { data: stream, isLoading: loadingStream } = useQuery<StreamData>({
     queryKey: ['stream', activeEpisode?.id, audioMode],
     queryFn: async () => {
       if (!activeEpisode?.id) return null;
-      const { data } = await api.get(`/watch/${activeEpisode.id}`, {
+      const { data } = await api.get(`/anime/animekai/watch/${activeEpisode.id}`, {
         params: { type: audioMode }
       });
       return data;
@@ -135,25 +142,27 @@ export default function WatchPage() {
 
   useEffect(() => {
     if (activeEpisode && episodeListRef.current) {
-      const activeElement = document.getElementById(`ep-${activeEpisode.id}`);
-      if (activeElement) {
-        activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      // Auto-scroll logic could go here
     }
   }, [activeEpisode, isTheaterMode]);
 
   // --- Helper Logic ---
   const videoSource = useMemo(() => {
     if (!stream?.sources) return null;
-
     const source = stream.sources.find((s) => s.quality === 'default')
       || stream.sources.find((s) => s.quality === 'backup')
       || stream.sources[0];
 
     if (!source?.url) return null;
 
-    const referer = stream.headers?.Referer || 'https://gogoanime.hu/';
+    // Apply Proxy for CORS
+    const referer = stream.headers?.Referer || 'https://anikai.to/';
     return `/api/proxy?url=${encodeURIComponent(source.url)}&referer=${encodeURIComponent(referer)}`;
+  }, [stream]);
+
+  // Filter subtitles (remove thumbnails track)
+  const subtitles = useMemo(() => {
+    return stream?.subtitles?.filter(s => s.kind !== 'thumbnails') || [];
   }, [stream]);
 
   const handleNextEp = () => {
@@ -201,15 +210,13 @@ export default function WatchPage() {
     );
   }
 
-  const title = anime.title.english || anime.title.romaji || anime.title.native || "Unknown Title";
-
   return (
     <div className="relative min-h-screen bg-background pb-20 overflow-x-hidden">
 
       {/* --- Dynamic Background --- */}
       <div className="fixed inset-0 z-0 pointer-events-none">
         <Image
-          src={anime.cover}
+          src={anime.image}
           alt="background"
           fill
           priority
@@ -227,7 +234,7 @@ export default function WatchPage() {
             <nav className="flex items-center gap-2 text-sm text-muted-foreground backdrop-blur-md rounded-full bg-secondary/30 border border-border px-4 py-2 w-fit">
               <Link href="/" className="hover:text-primary transition-colors">Home</Link>
               <ChevronRight className="h-3.5 w-3.5" />
-              <span className="truncate max-w-[150px] md:max-w-[300px] text-foreground font-medium">{title}</span>
+              <span className="truncate max-w-[150px] md:max-w-[300px] text-foreground font-medium">{anime.title}</span>
               <ChevronRight className="h-3.5 w-3.5" />
               <span className="text-primary font-bold">Ep {activeEpisode?.number}</span>
             </nav>
@@ -263,10 +270,11 @@ export default function WatchPage() {
                 ) : videoSource ? (
                   <HLSPlayer
                     src={videoSource}
-                    poster={anime.cover}
+                    poster={anime.image}
                     autoPlay={autoPlay}
                     currentAudio={audioMode}
-                    onAudioChange={(mode: 'sub' | 'dub') => setAudioMode(mode)}
+                    onAudioChange={(mode) => setAudioMode(mode)}
+                    subtitles={subtitles}
                   />
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card">
@@ -283,14 +291,25 @@ export default function WatchPage() {
               )}>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="space-y-1">
-                    <h1 className="text-xl md:text-2xl font-bold text-foreground line-clamp-1 drop-shadow-sm">{title}</h1>
-                    <div className="flex items-center gap-3 text-xs font-medium text-muted-foreground">
+                    <h1 className="text-xl md:text-2xl font-bold text-foreground line-clamp-1 drop-shadow-sm">{anime.title}</h1>
+
+                    {/* Metadata Tags */}
+                    <div className="flex flex-wrap items-center gap-2 text-xs font-medium text-muted-foreground">
                       <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
                         EP {activeEpisode?.number}
                       </Badge>
-                      <span className="flex items-center gap-1"><Star className="h-3.5 w-3.5 text-yellow-500 fill-yellow-500" /> {anime.rating}%</span>
+                      <div className="flex items-center gap-1 border border-border rounded px-2 py-0.5 bg-background/50">
+                        <Captions className="h-3 w-3" />
+                        <span>{anime.sub || '?'}</span>
+                      </div>
+                      <div className="flex items-center gap-1 border border-border rounded px-2 py-0.5 bg-background/50">
+                        <Mic className="h-3 w-3" />
+                        <span>{anime.dub || '?'}</span>
+                      </div>
                       <Separator orientation="vertical" className="h-3 bg-border" />
                       <span>{anime.releaseDate}</span>
+                      <Separator orientation="vertical" className="h-3 bg-border" />
+                      <span>{anime.type}</span>
                     </div>
                   </div>
 
@@ -336,14 +355,13 @@ export default function WatchPage() {
 
               {/* Episode List Card */}
               <div className="flex flex-col h-[650px] rounded-2xl border border-border bg-card/30 backdrop-blur-xl shadow-2xl overflow-hidden">
-                {/* Header */}
                 <div className="p-4 border-b border-border bg-white/2">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="font-bold text-lg flex items-center gap-2">
                       <List className="h-4 w-4 text-primary" /> Episodes
                     </h3>
                     <div className="flex items-center gap-3">
-                      <span className="text-xs text-muted-foreground font-mono">{anime.episodes?.length || 0} EPS</span>
+                      <span className="text-xs text-muted-foreground font-mono">{anime.episodes?.length || 0} ITEMS</span>
                       <div
                         onClick={() => dispatch(toggleAutoPlay())}
                         className={cn(
@@ -358,7 +376,6 @@ export default function WatchPage() {
                     </div>
                   </div>
 
-                  {/* Search */}
                   <div className="relative group">
                     <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
@@ -371,7 +388,6 @@ export default function WatchPage() {
                   </div>
                 </div>
 
-                {/* List */}
                 <ScrollArea className="flex-1" ref={episodeListRef}>
                   <div className="p-2 flex flex-col gap-1">
                     {filteredEpisodes.length > 0 ? (
@@ -390,14 +406,12 @@ export default function WatchPage() {
                             )}
                           >
                             <div className="relative h-12 w-20 shrink-0 rounded-lg bg-black/40 overflow-hidden border border-border">
-                              {ep.image ? (
-                                <Image src={ep.image} alt="" fill className="object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
-                              ) : (
-                                <div className="absolute inset-0 flex items-center justify-center bg-card text-xs font-bold text-muted-foreground group-hover:text-foreground transition-colors">
-                                  EP {ep.number}
-                                </div>
-                              )}
-
+                              <Image
+                                src={anime.image}
+                                alt=""
+                                fill
+                                className="object-cover opacity-70 group-hover:opacity-100 transition-opacity"
+                              />
                               {isActive && (
                                 <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-[1px]">
                                   <div className="flex gap-0.5 items-end h-3">
@@ -417,7 +431,7 @@ export default function WatchPage() {
                                 {ep.title || `Episode ${ep.number}`}
                               </span>
                               <span className="text-[11px] text-muted-foreground truncate max-w-[90%]">
-                                {ep.description || 'Watch now in HD'}
+                                {ep.isFiller ? 'Filler' : 'Canon'}
                               </span>
                             </div>
                           </button>
@@ -454,14 +468,15 @@ export default function WatchPage() {
           {!isTheaterMode && (
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in slide-in-from-bottom-10 duration-700">
 
-              {/* Left Column: Synopsis & Comments (col-span-8) */}
+              {/* Left Column: Synopsis & Comments */}
               <div className="lg:col-span-8 space-y-8">
 
                 {/* Synopsis Card */}
                 <div className="relative rounded-2xl border border-border bg-card/30 backdrop-blur-xl p-6 sm:p-8 shadow-xl">
+                  {/* Tags / Genres */}
                   <div className="flex flex-wrap gap-2 mb-6">
                     {anime.genres?.map((g) => (
-                      <Badge key={g} variant="outline" className="border-border hover:border-primary/50 hover:text-primary transition-colors bg-white/2">
+                      <Badge key={g} variant="outline" className="border-border hover:border-primary/50 hover:text-primary transition-colors bg-white/2 cursor-pointer">
                         {g}
                       </Badge>
                     ))}
@@ -514,7 +529,6 @@ export default function WatchPage() {
                       </div>
                     ) : (
                       <div className="relative p-8 flex flex-col items-center justify-center text-center space-y-3">
-                        {/* Blurry Background Mock */}
                         <div className="absolute inset-0 bg-background/50 backdrop-blur-sm z-10" />
                         <div className="relative z-20 flex flex-col items-center gap-3">
                           <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
@@ -522,7 +536,7 @@ export default function WatchPage() {
                           </div>
                           <div>
                             <h4 className="font-semibold text-foreground">Join the conversation</h4>
-                            <p className="text-sm text-muted-foreground">Sign in to leave a comment and interact with the community.</p>
+                            <p className="text-sm text-muted-foreground">Sign in to leave a comment.</p>
                           </div>
                           <Button variant="outline" className="gap-2 mt-2">Sign In to Comment</Button>
                         </div>
@@ -530,7 +544,7 @@ export default function WatchPage() {
                     )}
                   </div>
 
-                  {/* Mock Comments List */}
+                  {/* Mock Comments */}
                   <div className="space-y-4">
                     {MOCK_COMMENTS.map((comment) => (
                       <div key={comment.id} className="flex gap-4 p-4 rounded-xl hover:bg-white/5 transition-colors">
@@ -550,7 +564,7 @@ export default function WatchPage() {
                 </div>
               </div>
 
-              {/* Right Column: Info Sidebar (col-span-4) */}
+              {/* Info Sidebar */}
               <div className="lg:col-span-4 space-y-6">
                 <div className="rounded-2xl border border-border bg-card/30 backdrop-blur-xl p-6 shadow-xl">
                   <h3 className="font-bold text-lg mb-6 text-foreground">Anime Details</h3>
@@ -558,7 +572,6 @@ export default function WatchPage() {
                     {[
                       { label: "Status", value: anime.status, icon: PlayCircle },
                       { label: "Released", value: anime.releaseDate, icon: Calendar },
-                      { label: "Studio", value: anime.studios?.[0]?.name || 'Unknown', icon: Info },
                       { label: "Type", value: anime.type, icon: Star },
                     ].map((item, i) => (
                       <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">

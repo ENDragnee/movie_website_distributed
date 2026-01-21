@@ -6,6 +6,7 @@ import { api } from '@/lib/axios';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useSelector } from 'react-redux';
 
 // Components
 import AnimeCard from '@/components/cards/anime-card';
@@ -14,60 +15,59 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import {
   Loader2, Flame, Sparkles, TrendingUp, Play, Info,
-  ChevronRight, Star, History, User, LogIn
+  ChevronRight, History, User, LogIn, Mic, Captions
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RootState } from '@/store/store';
 
-// Types
+// --- NEW TYPE DEFINITION (Matches AnimeKai JSON) ---
 interface AnimeResult {
   id: string;
-  title: {
-    english: string;
-    romaji: string;
-    native: string;
-  };
+  title: string; // Changed from object to string
   image: string;
-  cover: string;
-  rating?: number;
+  banner: string;
+  url: string;
+  japaneseTitle?: string;
   type?: string;
-  ranking?: number;
-  description?: string;
+  sub?: number;
+  dub?: number;
+  episodes?: number;
 }
-
-// Mock Session State - Set to FALSE to test the "Opt to login" feature
-const IS_LOGGED_IN = false;
 
 // Mock History Data
 const MOCK_HISTORY = [
-  { id: 1, title: 'One Piece', ep: 1072, progress: 65, image: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx21-YCDuy1JW4h8O.png' },
-  { id: 2, title: 'Jujutsu Kaisen', ep: 23, progress: 30, image: 'https://s4.anilist.co/file/anilistcdn/media/anime/cover/large/bx142765-15aH1H0Gj0rV.png' },
+  { id: 'one-piece', title: 'One Piece', ep: 1072, progress: 65, image: 'https://static.anikai.to/i/2/2a/2a9709970997.jpg' },
+  { id: 'jujutsu-kaisen', title: 'Jujutsu Kaisen', ep: 23, progress: 30, image: 'https://static.anikai.to/i/9/91/91392193912.jpg' },
 ];
 
 export default function Home() {
   const router = useRouter();
   const [heroImageLoaded, setHeroImageLoaded] = useState(false);
 
-  // 1. Fetch Trending
+  // --- REAL SESSION STATE ---
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+
+  // 1. Fetch Trending (Using 'new-releases' as trending)
   const { data: trending, isLoading: loadingTrending, isError } = useQuery<AnimeResult[]>({
     queryKey: ['trending'],
     queryFn: async () => {
-      const { data } = await api.get('/trending');
+      // Accessing via the Ingress Path defined earlier
+      const { data } = await api.get('/anime/animekai/new-releases?page=1');
       return data.results;
     },
   });
 
-  // 2. Fetch Popular
+  // 2. Fetch Popular (Using 'spotlight' as popular)
   const { data: popular, isLoading: loadingPopular } = useQuery<AnimeResult[]>({
     queryKey: ['popular'],
     queryFn: async () => {
-      const { data } = await api.get('/popular');
+      const { data } = await api.get('/anime/animekai/spotlight');
       return data.results;
     },
   });
 
-  // Derived State for Hero
-  const heroAnime = trending?.[0];
-  const heroTitle = heroAnime?.title?.english || heroAnime?.title?.romaji || heroAnime?.title?.native;
+  // Derived State for Hero (First item from spotlight/popular usually has better images)
+  const heroAnime = popular?.[0] || trending?.[0];
 
   // --- Loading State ---
   if (loadingTrending || loadingPopular) {
@@ -122,7 +122,7 @@ export default function Home() {
           {/* Background Image Layer */}
           <div className="absolute inset-0 z-0">
             <Image
-              src={heroAnime.cover}
+              src={heroAnime.banner} // AnimeKai list only provides 'image', using it as cover
               alt="Hero Background"
               fill
               priority
@@ -132,8 +132,9 @@ export default function Home() {
               )}
               onLoad={() => setHeroImageLoaded(true)}
             />
-            <div className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-black/20" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/20 to-transparent" />
+            {/* Adaptive Gradients */}
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-black/30" />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/30 to-transparent" />
             <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.04] mix-blend-overlay"></div>
           </div>
 
@@ -143,25 +144,33 @@ export default function Home() {
 
               <div className="mb-4 flex flex-wrap items-center gap-3">
                 <Badge variant="default" className="bg-primary text-primary-foreground font-bold px-3 border-none">
-                  #{heroAnime.ranking || 1} Trending
+                  #{1} Spotlight
                 </Badge>
-                {/* Adaptive Badges */}
-                <Badge variant="outline" className="border-border bg-background/50 backdrop-blur-md text-foreground shadow-sm">
-                  <Star className="h-3 w-3 mr-1 text-yellow-500 fill-yellow-500" /> {heroAnime.rating}%
+
+                {/* Metadata Badges */}
+                <Badge variant="outline" className="border-border bg-background/50 backdrop-blur-md text-foreground shadow-sm flex items-center gap-1">
+                  <Captions className="h-3 w-3" /> {heroAnime.sub || 0}
                 </Badge>
+                {heroAnime.dub ? (
+                  <Badge variant="outline" className="border-border bg-background/50 backdrop-blur-md text-foreground shadow-sm flex items-center gap-1">
+                    <Mic className="h-3 w-3" /> {heroAnime.dub}
+                  </Badge>
+                ) : null}
+
                 <Badge variant="outline" className="border-border bg-background/50 backdrop-blur-md text-foreground shadow-sm">
-                  {heroAnime.type || 'TV Series'}
+                  {heroAnime.type || 'TV'}
                 </Badge>
               </div>
 
-              {/* Adaptive Title: Uses text-foreground (Black in Light, White in Dark) */}
+              {/* Title */}
               <h1 className="mb-4 text-4xl font-black tracking-tight text-foreground sm:text-6xl lg:text-7xl drop-shadow-2xl line-clamp-2">
-                {heroTitle}
+                {heroAnime.title}
               </h1>
 
-              {/* Adaptive Description */}
+              {/* Description Placeholder (List response doesn't have desc) */}
               <p className="mb-8 text-lg leading-relaxed text-muted-foreground line-clamp-3 md:line-clamp-2 max-w-xl font-medium">
-                {heroAnime.description?.replace(/<[^>]*>?/gm, '') || "Experience the latest sensation."}
+                {heroAnime.japaneseTitle ? `Also known as ${heroAnime.japaneseTitle}. ` : ''}
+                Watch the latest episodes in high quality. Experience the action, drama, and excitement of this trending series.
               </p>
 
               <div className="flex flex-wrap items-center gap-4">
@@ -191,18 +200,18 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
 
-          {/* --- LEFT COLUMN: Trending (Takes 9/12 cols) --- */}
+          {/* --- LEFT COLUMN: Lists (Takes 9/12 cols) --- */}
           <div className="lg:col-span-9 space-y-16">
 
-            {/* Trending Section */}
+            {/* Trending / New Releases */}
             <section className="space-y-6">
               <div className="flex items-end justify-between border-b border-border pb-4">
                 <div className="space-y-1">
                   <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground">
                     <Flame className="h-6 w-6 text-orange-500 fill-orange-500" />
-                    Trending Now
+                    New Releases
                   </h2>
-                  <p className="text-sm text-muted-foreground">The most watched anime this week</p>
+                  <p className="text-sm text-muted-foreground">Fresh episodes just aired</p>
                 </div>
                 <Link href="/trending" className="group flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80">
                   View All <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -210,27 +219,28 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-                {trending?.map((anime: AnimeResult) => (
+                {trending?.map((anime) => (
                   <AnimeCard
                     key={anime.id}
                     id={anime.id}
-                    title={anime.title?.english || anime.title?.romaji || anime.title?.native}
+                    title={anime.title}
                     image={anime.image}
-                    score={anime.rating}
+                    // AnimeKai list doesn't have rating, we can pass sub count or omit
+                    score={undefined}
                   />
                 ))}
               </div>
             </section>
 
-            {/* Popular Section */}
+            {/* Popular / Spotlight */}
             <section className="space-y-6">
               <div className="flex items-end justify-between border-b border-border pb-4">
                 <div className="space-y-1">
                   <h2 className="flex items-center gap-2 text-2xl font-bold text-foreground">
                     <Sparkles className="h-6 w-6 text-yellow-400 fill-yellow-400" />
-                    All Time Popular
+                    Spotlight
                   </h2>
-                  <p className="text-sm text-muted-foreground">Classics that never get old</p>
+                  <p className="text-sm text-muted-foreground">Top rated series right now</p>
                 </div>
                 <Link href="/popular" className="group flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80">
                   View All <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -238,13 +248,13 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-5">
-                {popular?.map((anime: AnimeResult) => (
+                {popular?.map((anime) => (
                   <AnimeCard
                     key={anime.id}
                     id={anime.id}
-                    title={anime.title?.english || anime.title?.romaji}
-                    image={anime.image}
-                    score={anime.rating}
+                    title={anime.title}
+                    image={anime.banner}
+                    score={undefined}
                   />
                 ))}
               </div>
@@ -263,7 +273,7 @@ export default function Home() {
               </div>
 
               <div className="p-4">
-                {IS_LOGGED_IN ? (
+                {isAuthenticated ? (
                   /* LOGGED IN VIEW */
                   <div className="space-y-4">
                     {MOCK_HISTORY.map((item) => (
@@ -288,7 +298,7 @@ export default function Home() {
                     </Button>
                   </div>
                 ) : (
-                  /* LOGGED OUT VIEW (Placeholder) */
+                  /* LOGGED OUT VIEW */
                   <div className="flex flex-col items-center justify-center py-8 text-center animate-in fade-in zoom-in-95 duration-500">
                     <div className="mb-4 p-4 rounded-full bg-primary/10">
                       <User className="h-8 w-8 text-primary" />
@@ -297,9 +307,11 @@ export default function Home() {
                     <p className="mt-2 text-xs text-muted-foreground leading-relaxed px-2">
                       Sign in to track your watch history and pick up exactly where you left off.
                     </p>
-                    <Button className="mt-6 w-full gap-2 shadow-lg hover:shadow-primary/20" size="sm">
-                      <LogIn className="h-4 w-4" /> Sign In
-                    </Button>
+                    <Link href="/sign-in" className="w-full">
+                      <Button className="mt-6 w-full gap-2 shadow-lg hover:shadow-primary/20" size="sm">
+                        <LogIn className="h-4 w-4" /> Sign In
+                      </Button>
+                    </Link>
                   </div>
                 )}
               </div>
