@@ -1,0 +1,117 @@
+# Watchlist Service
+
+A backend microservice that manages **per-user watchlists** for media items (anime and movies).  
+Each user can add, view, update, and remove items from their personal watchlist.
+
+---
+
+## ✨ Features
+
+- Per-user scoped watchlists
+- Supports **anime** and **movies**
+- Secure object-level authorization
+- RESTful API design
+- PostgreSQL database support
+
+---
+
+## 📌 Responsibilities
+
+- Add media items to a user’s watchlist
+- List a user’s watchlist (most recent first)
+- Update watch status
+- Remove items from the watchlist
+- Ensure users can only access their own data
+
+---
+
+
+### Ownership Enforcement
+
+- An `IsOwner` permission ensures users can:
+- View only their own watchlist
+- Modify or delete only their own entries
+
+---
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Description |
+|------|--------|------------|
+| POST | `/api/watchlist/` | Add an item to the watchlist |
+| GET | `/api/watchlist/` | List the user’s watchlist |
+| PUT | `/api/watchlist/{id}/` | Update watch status |
+| DELETE | `/api/watchlist/{id}/` | Remove an item |
+
+---
+
+## 🧠 Request Flow
+
+1. Client sends a request with a JWT in the `Authorization` header
+2. `JWTAuthentication`:
+ - Decodes and validates the token
+ - Attaches the user to `request.user`
+3. `WatchlistViewSet.get_queryset()`:
+ - Filters entries by `request.user.id`
+4. On creation:
+ - `user_id` is automatically set from the token
+5. Object-level permissions enforce ownership on:
+ - Retrieve
+ - Update
+ - Delete
+
+---
+
+## 🗂️ Data Model
+
+| Field | Type | Description |
+|-----|------|------------|
+| `id` | UUID | Primary key |
+| `user_id` | string | User ID from JWT |
+| `media_id` | string | ID from Consumet API |
+| `media_type` | enum | `anime` or `movie` |
+| `title` | string | Media title |
+| `poster_url` | string | Media poster URL |
+| `status` | enum | `watching`, `completed`, `planned` |
+| `created_at` | datetime | Creation timestamp |
+| `updated_at` | datetime | Last update timestamp |
+
+---
+
+## 📤 Serializer Output
+
+The `WatchlistSerializer` exposes:
+
+- `id`
+- `user_id` (read-only)
+- `media_id`
+- `media_type`
+- `title`
+- `poster_url`
+- `status`
+- `created_at`
+- `updated_at`
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Description |
+|-------|------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+
+
+---
+
+## 🛠️ Tech Stack
+
+- Python / Django REST Framework
+- PostgreSQL
+- External Auth Service
+- Consumet API (media metadata)
+
+---
+
+
